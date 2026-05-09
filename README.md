@@ -36,18 +36,20 @@
 
 - [Links Úteis](#links-úteis)
 - [Sobre o Projeto](#sobre-o-projeto)
-- [Atores do Sistema](#atores-do-sistema)
 - [Funcionalidades Principais](#funcionalidades-principais)
 - [Tecnologias Utilizadas](#tecnologias-utilizadas)
-- [Arquitetura](#arquitetura)
-  - [Diagrama de Casos de Uso](#diagrama-de-casos-de-uso)
-  - [Diagrama de Classes e Pacotes](#diagrama-de-classes-e-pacotes)
-  - [Diagrama Entidade-Relacionamento](#diagrama-entidade-relacionamento)
-  - [Diagramas de Sequência](#diagramas-de-sequência)
-  - [Diagrama de Atividade](#diagrama-de-atividade)
-  - [Diagrama de Estado](#diagrama-de-estado)
-  - [Diagrama de Componentes](#diagrama-de-componentes)
-  - [Diagrama de Implantação](#diagrama-de-implantação)
+- [2. Modelos de Usuário e Requisitos](#2-modelos-de-usuário-e-requisitos)
+  - [2.1 Descrição de Atores](#21-descrição-de-atores)
+  - [2.2 Modelo de Casos de Uso](#22-modelo-de-casos-de-uso)
+  - [2.3 Diagramas de Sequência do Sistema e Contratos de Operações](#23-diagramas-de-sequência-do-sistema-e-contratos-de-operações)
+- [3. Modelos de Projeto](#3-modelos-de-projeto)
+  - [3.1 Arquitetura (C4 Model)](#31-arquitetura-c4-model)
+  - [3.2 Diagrama de Componentes e Implantação](#32-diagrama-de-componentes-e-implantação)
+  - [3.3 Diagrama de Classes](#33-diagrama-de-classes)
+  - [3.4 Diagramas de Sequência](#34-diagramas-de-sequência)
+  - [3.5 Diagramas de Comunicação](#35-diagramas-de-comunicação)
+  - [3.6 Diagrama de Estados](#36-diagrama-de-estados)
+- [4. Modelos de Dados](#4-modelos-de-dados)
 - [Instalação e Execução](#instalação-e-execução)
 - [Estrutura de Pastas](#estrutura-de-pastas)
 - [Documentações Utilizadas](#documentações-utilizadas)
@@ -86,18 +88,6 @@ O **PataAmiga** resolve esse problema oferecendo uma plataforma centralizada que
 > Este projeto é o **Trabalho 2** da disciplina de **Projeto de Software** da **PUC Minas** (Prof. Dr. João Paulo Aramuni). O trabalho solicita a **documentação arquitetural completa** de um sistema de software — incluindo especificação de requisitos, modelagem UML com PlantUML, definição de tecnologias e descrição da arquitetura.
 >
 > **Este repositório contém exclusivamente documentação.** Não há código-fonte implementado. A estrutura de pastas apresentada na seção [Estrutura de Pastas](#estrutura-de-pastas) representa como o projeto seria organizado caso fosse desenvolvido, servindo como artefato de projeto de software.
-
----
-
-## Atores do Sistema
-
-| Ator | Tipo | Responsabilidades |
-|------|------|-------------------|
-| **Adotante** | Externo | Buscar animais disponíveis, submeter solicitação de adoção, acompanhar o processo e registrar pós-adoção |
-| **Voluntário** | Interno | Registrar animais resgatados, agendar atendimentos veterinários, atualizar status e apoiar eventos |
-| **Veterinário** | Interno | Emitir laudos clínicos, registrar prontuários, aplicar vacinas e procedimentos, liberar animais para adoção |
-| **Coordenador da ONG** | Interno | Gerenciar equipe, aprovar ou rejeitar adoções, controlar recursos, emitir relatórios gerenciais |
-| **Doador** | Externo | Realizar doações pontuais ou recorrentes, acompanhar uso dos recursos e visualizar relatórios de impacto |
 
 ---
 
@@ -140,9 +130,58 @@ O **PataAmiga** resolve esse problema oferecendo uma plataforma centralizada que
 
 ---
 
-## Arquitetura
+## 2. Modelos de Usuário e Requisitos
 
-O PataAmiga adota uma arquitetura **monolítica modular em camadas**, adequada para o porte de uma ONG de pequeno e médio porte. O sistema é dividido em três grandes blocos: frontend Angular (SPA), backend Spring Boot (API REST) e banco de dados PostgreSQL — todos orquestrados via Docker Compose.
+### 2.1 Descrição de Atores
+
+| Ator | Tipo | Responsabilidades |
+|------|------|-------------------|
+| **Adotante** | Externo / Primário | Buscar animais disponíveis, submeter solicitação de adoção, acompanhar o processo e registrar pós-adoção |
+| **Voluntário** | Interno / Operacional | Registrar animais resgatados, agendar atendimentos veterinários, atualizar status e apoiar eventos |
+| **Veterinário** | Interno / Especialista | Emitir laudos clínicos, registrar prontuários, aplicar vacinas e procedimentos, liberar animais para adoção |
+| **Coordenador da ONG** | Interno / Administrativo | Gerenciar equipe, aprovar ou rejeitar adoções, controlar recursos, emitir relatórios gerenciais |
+| **Doador** | Externo / Suporte | Realizar doações pontuais ou recorrentes, acompanhar uso dos recursos e visualizar relatórios de impacto |
+
+---
+
+### 2.2 Modelo de Casos de Uso
+
+> Visão geral das interações entre os 5 atores e as funcionalidades do sistema. Cada caso de uso recebe um ID (`UC-NN`) usado como referência cruzada nas demais seções.
+
+<!-- TODO: inserir imagem -->
+| Casos de Uso |
+| :---: |
+| _Em desenvolvimento_ |
+
+Fonte PlantUML: [`docs/diagrams/puml/01-caso-de-uso.puml`](docs/diagrams/puml/01-caso-de-uso.puml)
+
+---
+
+### 2.3 Diagramas de Sequência do Sistema e Contratos de Operações
+
+> Diagramas de Sequência do Sistema (SSD) — visão **caixa-preta** das três operações de sistema escolhidas. Cada SSD origina um **contrato de operação** com pré-condições e pós-condições.
+
+<!-- TODO: inserir imagens -->
+| UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
+| :---: | :---: | :---: |
+| _Em desenvolvimento_ | _Em desenvolvimento_ | _Em desenvolvimento_ |
+
+Fontes PlantUML:
+- [`docs/diagrams/puml/02-ssd-solicitar-adocao.puml`](docs/diagrams/puml/02-ssd-solicitar-adocao.puml)
+- [`docs/diagrams/puml/03-ssd-registrar-animal.puml`](docs/diagrams/puml/03-ssd-registrar-animal.puml)
+- [`docs/diagrams/puml/04-ssd-registrar-atendimento.puml`](docs/diagrams/puml/04-ssd-registrar-atendimento.puml)
+
+#### Contratos de Operação
+
+> _Em desenvolvimento — um contrato por operação de sistema chave (Operação · Referências cruzadas · Pré-condições · Pós-condições)._
+
+---
+
+## 3. Modelos de Projeto
+
+### 3.1 Arquitetura (C4 Model)
+
+O PataAmiga adota uma arquitetura **monolítica modular em camadas**, adequada para o porte de uma ONG de pequeno e médio porte. A arquitetura é apresentada em três níveis do **C4 Model**: contexto, containers e componentes.
 
 **Pacotes do backend (`br.pucminas.pataamiga`):**
 
@@ -162,113 +201,124 @@ security/            — JwtFilter, JwtUtil, UserDetailsServiceImpl
 
 **Padrões adotados:** Repository Pattern, Service Layer, DTO (request/response), Mapper (MapStruct), Global Exception Handling, Spring Security com RBAC por perfil de ator.
 
-Os diagramas a seguir detalham cada aspecto da arquitetura.
-
----
-
-### Diagrama de Casos de Uso
-
-> Visão geral das interações entre os 5 atores e as funcionalidades do sistema.
+#### C4 Nível 1 — Contexto
 
 <!-- TODO: inserir imagem -->
-| Casos de Uso |
+| Contexto |
 | :---: |
 | _Em desenvolvimento_ |
 
-Fonte PlantUML: [`docs/diagrams/puml/01-caso-de-uso.puml`](docs/diagrams/puml/01-caso-de-uso.puml)
+Fonte PlantUML: [`docs/diagrams/puml/05-c4-contexto.puml`](docs/diagrams/puml/05-c4-contexto.puml)
 
----
-
-### Diagrama de Classes e Pacotes
-
-> Modelo de domínio com entidades, atributos, métodos, relacionamentos e organização em pacotes do backend.
+#### C4 Nível 2 — Containers
 
 <!-- TODO: inserir imagem -->
-| Classes e Pacotes |
+| Containers |
 | :---: |
 | _Em desenvolvimento_ |
 
-Fonte PlantUML: [`docs/diagrams/puml/02-classes-e-pacotes.puml`](docs/diagrams/puml/02-classes-e-pacotes.puml)
+Fonte PlantUML: [`docs/diagrams/puml/06-c4-containers.puml`](docs/diagrams/puml/06-c4-containers.puml)
 
 ---
 
-### Diagrama Entidade-Relacionamento
+### 3.2 Diagrama de Componentes e Implantação
 
-> Esquema relacional do banco de dados PostgreSQL com tabelas, chaves e cardinalidades.
+> O **diagrama de componentes** é o **C4 Nível 3**, detalhando os componentes internos do backend. O **diagrama de implantação** mostra onde cada container é alocado na infraestrutura Docker.
+
+#### Diagrama de Componentes (C4 Nível 3)
 
 <!-- TODO: inserir imagem -->
-| Entidade-Relacionamento |
+| Componentes do Backend |
 | :---: |
 | _Em desenvolvimento_ |
 
-Fonte PlantUML: [`docs/diagrams/puml/03-entidade-relacionamento.puml`](docs/diagrams/puml/03-entidade-relacionamento.puml)
+Fonte PlantUML: [`docs/diagrams/puml/07-c4-componentes.puml`](docs/diagrams/puml/07-c4-componentes.puml)
 
----
-
-### Diagramas de Sequência
-
-> Interações passo a passo entre atores e componentes nos principais fluxos do sistema.
-
-<!-- TODO: inserir imagens -->
-| Processo de Adoção | Entrada de Animal Resgatado |
-| :---: | :---: |
-| _Em desenvolvimento_ | _Em desenvolvimento_ |
-
-Fontes PlantUML:
-- [`docs/diagrams/puml/04-sequencia-adocao.puml`](docs/diagrams/puml/04-sequencia-adocao.puml)
-- [`docs/diagrams/puml/05-sequencia-entrada-animal.puml`](docs/diagrams/puml/05-sequencia-entrada-animal.puml)
-
----
-
-### Diagrama de Atividade
-
-> Fluxo de decisões e etapas do processo de adoção, do ponto de vista do sistema.
-
-<!-- TODO: inserir imagem -->
-| Atividade — Fluxo de Adoção |
-| :---: |
-| _Em desenvolvimento_ |
-
-Fonte PlantUML: [`docs/diagrams/puml/06-atividade-adocao.puml`](docs/diagrams/puml/06-atividade-adocao.puml)
-
----
-
-### Diagrama de Estado
-
-> Ciclo de vida de um animal dentro da plataforma, do resgate à adoção.
-
-<!-- TODO: inserir imagem -->
-| Estados do Animal |
-| :---: |
-| _Em desenvolvimento_ |
-
-Fonte PlantUML: [`docs/diagrams/puml/07-estado-animal.puml`](docs/diagrams/puml/07-estado-animal.puml)
-
----
-
-### Diagrama de Componentes
-
-> Estrutura interna do sistema com módulos, interfaces e dependências.
-
-<!-- TODO: inserir imagem -->
-| Componentes do Sistema |
-| :---: |
-| _Em desenvolvimento_ |
-
-Fonte PlantUML: [`docs/diagrams/puml/08-componentes.puml`](docs/diagrams/puml/08-componentes.puml)
-
----
-
-### Diagrama de Implantação
-
-> Infraestrutura física/virtual — containers Docker, redes e serviços.
+#### Diagrama de Implantação
 
 <!-- TODO: inserir imagem -->
 | Infraestrutura de Implantação |
 | :---: |
 | _Em desenvolvimento_ |
 
-Fonte PlantUML: [`docs/diagrams/puml/09-implantacao.puml`](docs/diagrams/puml/09-implantacao.puml)
+Fonte PlantUML: [`docs/diagrams/puml/08-implantacao.puml`](docs/diagrams/puml/08-implantacao.puml)
+
+---
+
+### 3.3 Diagrama de Classes
+
+> Modelo de domínio com entidades, atributos, métodos e relacionamentos.
+
+<!-- TODO: inserir imagem -->
+| Classes do Domínio |
+| :---: |
+| _Em desenvolvimento_ |
+
+Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-classes.puml)
+
+---
+
+### 3.4 Diagramas de Sequência
+
+> Realização interna (caixa-branca) de cada caso de uso — atores, controllers, services, repositórios e banco.
+
+<!-- TODO: inserir imagens -->
+| UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
+| :---: | :---: | :---: |
+| _Em desenvolvimento_ | _Em desenvolvimento_ | _Em desenvolvimento_ |
+
+Fontes PlantUML:
+- [`docs/diagrams/puml/10-seq-solicitar-adocao.puml`](docs/diagrams/puml/10-seq-solicitar-adocao.puml)
+- [`docs/diagrams/puml/11-seq-registrar-animal.puml`](docs/diagrams/puml/11-seq-registrar-animal.puml)
+- [`docs/diagrams/puml/12-seq-registrar-atendimento.puml`](docs/diagrams/puml/12-seq-registrar-atendimento.puml)
+
+---
+
+### 3.5 Diagramas de Comunicação
+
+> Mesmas mensagens dos diagramas de sequência da seção 3.4, vistas como **colaboração entre objetos** (numeração sobre as conexões).
+
+<!-- TODO: inserir imagens -->
+| UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
+| :---: | :---: | :---: |
+| _Em desenvolvimento_ | _Em desenvolvimento_ | _Em desenvolvimento_ |
+
+Fontes PlantUML:
+- [`docs/diagrams/puml/13-com-solicitar-adocao.puml`](docs/diagrams/puml/13-com-solicitar-adocao.puml)
+- [`docs/diagrams/puml/14-com-registrar-animal.puml`](docs/diagrams/puml/14-com-registrar-animal.puml)
+- [`docs/diagrams/puml/15-com-registrar-atendimento.puml`](docs/diagrams/puml/15-com-registrar-atendimento.puml)
+
+---
+
+### 3.6 Diagrama de Estados
+
+> Ciclo de vida de um animal dentro da plataforma, do resgate à adoção (`RESGATADO` → `EM_TRATAMENTO` → `DISPONIVEL` → `EM_PROCESSO_ADOCAO` → `ADOTADO` / `OBITO`).
+
+<!-- TODO: inserir imagem -->
+| Estados do Animal |
+| :---: |
+| _Em desenvolvimento_ |
+
+Fonte PlantUML: [`docs/diagrams/puml/16-estado-animal.puml`](docs/diagrams/puml/16-estado-animal.puml)
+
+---
+
+## 4. Modelos de Dados
+
+> Esquema relacional do banco PostgreSQL e a estratégia de mapeamento objeto/relacional adotada (Hibernate/JPA).
+
+### Diagrama Entidade-Relacionamento
+
+<!-- TODO: inserir imagem -->
+| Entidade-Relacionamento |
+| :---: |
+| _Em desenvolvimento_ |
+
+Fonte PlantUML: [`docs/diagrams/puml/17-entidade-relacionamento.puml`](docs/diagrams/puml/17-entidade-relacionamento.puml)
+
+### Estratégia de Mapeamento Objeto-Relacional
+
+> _Em desenvolvimento — descreverá como entidades JPA são mapeadas para tabelas (`@Entity`, `@Table`, `@Id`/`@GeneratedValue`, relacionamentos `@OneToMany` / `@ManyToOne`, estratégia de herança quando aplicável, e enums como `@Enumerated(EnumType.STRING)`)._
 
 ---
 
@@ -323,7 +373,7 @@ PataAmiga/
 │   └── workflows/              # CI/CD com GitHub Actions
 ├── docs/
 │   └── diagrams/
-│       ├── puml/               # Fontes PlantUML (10 diagramas)
+│       ├── puml/               # Fontes PlantUML (17 diagramas)
 │       └── png/                # Imagens geradas dos diagramas
 ├── backend/                    # API Spring Boot (Java 21)
 │   └── src/main/java/

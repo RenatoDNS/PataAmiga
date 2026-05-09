@@ -1,0 +1,4 @@
+@startuml 04-ssd-registrar-atendimento
+' PataAmiga — Sequência do Sistema (SSD) do UC-03 Registrar Atendimento Veterinário (caixa-preta, seção 2.3)
+' TODO
+@enduml
