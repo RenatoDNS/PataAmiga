@@ -1,4 +1,83 @@
 @startuml 01-caso-de-uso
-' PataAmiga — Diagrama de Casos de Uso (seção 2.2)
-' TODO
+' PataAmiga — Diagrama de Casos de Uso (seção 2.2 do template)
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam usecase {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam package {
+  BackgroundColor #FAFAFA
+  BorderColor #9E9E9E
+}
+
+actor Adotante
+actor Voluntário as Voluntario
+actor Veterinário as Veterinario
+actor "Coordenador\nda ONG" as Coordenador
+actor Doador
+
+rectangle "Sistema PataAmiga" {
+
+  package "Adoção" {
+    usecase "UC-04\nBuscar Animal\nDisponível" as UC04
+    usecase "UC-01\nSolicitar Adoção" as UC01
+    usecase "UC-05\nAcompanhar\nProcesso de Adoção" as UC05
+    usecase "UC-06\nRegistrar\nPós-Adoção" as UC06
+    usecase "UC-10\nAprovar/Rejeitar\nAdoção" as UC10
+  }
+
+  package "Gestão de Animais" {
+    usecase "UC-02\nRegistrar Animal\nResgatado" as UC02
+    usecase "UC-07\nAtualizar Status\ndo Animal" as UC07
+    usecase "UC-08\nAgendar\nAtendimento" as UC08
+  }
+
+  package "Atendimento Veterinário" {
+    usecase "UC-03\nRegistrar\nAtendimento Veterinário" as UC03
+    usecase "UC-09\nEmitir Laudo\nde Liberação" as UC09
+  }
+
+  package "Administração" {
+    usecase "UC-11\nGerenciar\nVoluntários" as UC11
+    usecase "UC-12\nEmitir Relatórios\nGerenciais" as UC12
+  }
+
+  package "Doações" {
+    usecase "UC-13\nRealizar Doação" as UC13
+    usecase "UC-14\nAcompanhar\nDestinação" as UC14
+  }
+}
+
+' Atores → Casos de Uso
+Adotante    --> UC04
+Adotante    --> UC01
+Adotante    --> UC05
+Adotante    --> UC06
+
+Voluntario  --> UC02
+Voluntario  --> UC07
+Voluntario  --> UC08
+
+Veterinario --> UC03
+Veterinario --> UC09
+
+Coordenador --> UC10
+Coordenador --> UC11
+Coordenador --> UC12
+
+Doador      --> UC13
+Doador      --> UC14
+
+' Relacionamentos entre casos de uso (include — sempre executados como parte do fluxo)
+UC03 ..> UC07 : <<include>>
+UC09 ..> UC07 : <<include>>
+UC10 ..> UC07 : <<include>>
+
 @enduml

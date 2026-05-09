@@ -148,10 +148,38 @@ O **PataAmiga** resolve esse problema oferecendo uma plataforma centralizada que
 
 > Visão geral das interações entre os 5 atores e as funcionalidades do sistema. Cada caso de uso recebe um ID (`UC-NN`) usado como referência cruzada nas demais seções.
 
-<!-- TODO: inserir imagem -->
-| Casos de Uso |
+#### Lista de Casos de Uso
+
+Os 14 casos de uso estão agrupados em 5 pacotes funcionais.
+
+| ID | Caso de Uso | Ator(es) Primário(s) | Pacote |
+|----|-------------|---------------------|--------|
+| **UC-01** | Solicitar Adoção | Adotante | Adoção |
+| **UC-02** | Registrar Animal Resgatado | Voluntário | Gestão de Animais |
+| **UC-03** | Registrar Atendimento Veterinário | Veterinário | Atendimento Veterinário |
+| **UC-04** | Buscar Animal Disponível | Adotante | Adoção |
+| **UC-05** | Acompanhar Processo de Adoção | Adotante | Adoção |
+| **UC-06** | Registrar Pós-Adoção | Adotante | Adoção |
+| **UC-07** | Atualizar Status do Animal | Voluntário | Gestão de Animais |
+| **UC-08** | Agendar Atendimento Veterinário | Voluntário | Gestão de Animais |
+| **UC-09** | Emitir Laudo de Liberação para Adoção | Veterinário | Atendimento Veterinário |
+| **UC-10** | Aprovar/Rejeitar Adoção | Coordenador da ONG | Adoção |
+| **UC-11** | Gerenciar Voluntários | Coordenador da ONG | Administração |
+| **UC-12** | Emitir Relatórios Gerenciais | Coordenador da ONG | Administração |
+| **UC-13** | Realizar Doação | Doador | Doações |
+| **UC-14** | Acompanhar Destinação das Doações | Doador | Doações |
+
+#### Relacionamentos entre Casos de Uso
+
+| Relacionamento | Descrição |
+|---|---|
+| `UC-03` **«include»** `UC-07` | Todo atendimento veterinário registra uma transição de status (ex.: `RESGATADO` → `EM_TRATAMENTO`). |
+| `UC-09` **«include»** `UC-07` | A emissão do laudo de liberação move o animal para `DISPONIVEL`. |
+| `UC-10` **«include»** `UC-07` | A aprovação move para `EM_PROCESSO_ADOCAO`/`ADOTADO`; a rejeição mantém em `DISPONIVEL`. |
+
+| ![Diagrama de Casos de Uso](docs/diagrams/png/01-caso-de-uso.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 1** — Diagrama de Casos de Uso do PataAmiga |
 
 Fonte PlantUML: [`docs/diagrams/puml/01-caso-de-uso.puml`](docs/diagrams/puml/01-caso-de-uso.puml)
 
