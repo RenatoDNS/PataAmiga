@@ -1,4 +1,33 @@
 @startuml 06-c4-containers
-' PataAmiga — C4 Model Nível 2: Diagrama de Containers (seção 3.1)
-' TODO
+!include <C4/C4_Container>
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Nível 2 — Diagrama de Containers: PataAmiga
+
+Person(voluntario, "Voluntário", "Registra animais e atendimentos")
+Person(veterinario, "Veterinário", "Registra prontuários clínicos")
+Person(coordenador, "Coordenador", "Gestão administrativa")
+Person_Ext(adotante, "Adotante", "Busca e solicita adoção")
+Person_Ext(doador, "Doador", "Realiza doações")
+
+System_Boundary(pataamiga, "PataAmiga") {
+    Container(spa, "Frontend SPA", "Angular 17 / TypeScript", "Interface web responsiva.\nRoda no navegador do usuário.\nConsome a API REST via HttpClient.")
+    Container(api, "Backend API", "Java 21 / Spring Boot 3.x", "API REST com autenticação JWT e RBAC.\nContém toda a lógica de negócio.\nExpõe endpoints em /api/v1/**")
+    ContainerDb(db, "Banco de Dados", "PostgreSQL 16", "Armazena animais, usuários, perfis,\nadoções, prontuários e doações.\nAcessado via Hibernate / JPA.")
+}
+
+System_Ext(email, "Serviço de E-mail", "Envio de notificações (SMTP)")
+System_Ext(pagamento, "Gateway de Pagamento", "Processamento de doações")
+
+Rel(adotante, spa, "Acessa via", "HTTPS")
+Rel(voluntario, spa, "Acessa via", "HTTPS")
+Rel(veterinario, spa, "Acessa via", "HTTPS")
+Rel(coordenador, spa, "Acessa via", "HTTPS")
+Rel(doador, spa, "Acessa via", "HTTPS")
+Rel(spa, api, "Consome endpoints REST,\nenvia/recebe JSON", "HTTPS / JSON")
+Rel(api, db, "Lê e persiste dados", "JDBC / JPA (Hibernate)")
+Rel(api, email, "Envia notificações de\nprocesso e confirmações", "SMTP/TLS")
+Rel(api, pagamento, "Processa doações\n(Pix / cartão)", "HTTPS/REST")
+
 @enduml

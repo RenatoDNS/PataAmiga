@@ -1,4 +1,27 @@
 @startuml 05-c4-contexto
-' PataAmiga — C4 Model Nível 1: Diagrama de Contexto (seção 3.1)
-' TODO
+!include <C4/C4_Context>
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Nível 1 — Diagrama de Contexto: PataAmiga
+
+Person(voluntario, "Voluntário", "Colaborador da ONG que\nregistra e acompanha animais")
+Person(veterinario, "Veterinário", "Profissional responsável\npelos atendimentos clínicos")
+Person(coordenador, "Coordenador da ONG", "Gestor administrativo\nda organização")
+Person_Ext(adotante, "Adotante", "Pessoa interessada em\nadotar um animal")
+Person_Ext(doador, "Doador", "Pessoa ou empresa que\nrealiza doações à ONG")
+
+System(pataamiga, "PataAmiga", "Plataforma web de gestão de ONGs\nde resgate e adoção de animais.\nCentraliza o ciclo completo do animal.")
+
+System_Ext(email, "Serviço de E-mail", "Envia notificações, confirmações\ne alertas (ex.: SendGrid, Gmail SMTP)")
+System_Ext(pagamento, "Gateway de Pagamento", "Processa doações via Pix e\ncartão de crédito (ex.: Stripe, Asaas)")
+
+Rel(adotante, pataamiga, "Busca animais, solicita adoção,\nacompanha processo", "HTTPS")
+Rel(voluntario, pataamiga, "Registra resgates, agenda\natendimentos, atualiza status", "HTTPS")
+Rel(veterinario, pataamiga, "Emite laudos, registra\nprontuários, libera para adoção", "HTTPS")
+Rel(coordenador, pataamiga, "Aprova adoções, gerencia\nequipe, emite relatórios", "HTTPS")
+Rel(doador, pataamiga, "Realiza doações, visualiza\nrelatórios de impacto", "HTTPS")
+Rel(pataamiga, email, "Envia notificações e\nconfirmações de processo", "SMTP/TLS")
+Rel(pataamiga, pagamento, "Processa doações\n(Pix / cartão)", "HTTPS/REST")
+
 @enduml

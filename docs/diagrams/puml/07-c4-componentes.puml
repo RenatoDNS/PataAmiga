@@ -1,4 +1,52 @@
 @startuml 07-c4-componentes
-' PataAmiga — C4 Model Nível 3: Componentes do Backend (cobre seção 3.2 do template)
-' TODO
+!include <C4/C4_Component>
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Nível 3 — Componentes do Backend: PataAmiga
+
+Container_Ext(spa, "Frontend SPA", "Angular 17", "Consome a API REST")
+ContainerDb_Ext(db, "PostgreSQL 16", "Banco de Dados", "Armazenamento persistente")
+System_Ext(email, "Serviço de E-mail", "SMTP")
+System_Ext(pagamento, "Gateway de Pagamento", "REST")
+
+Container_Boundary(api, "Backend API — Spring Boot 3.x / Java 21 (br.pucminas.pataamiga)") {
+
+    Component(security, "Camada de Segurança", "Spring Security 6 / JwtFilter", "Intercepta requisições, valida tokens JWT\ne aplica RBAC por perfil de ator.\n(config/ + security/)")
+
+    Component(animalCtrl, "AnimalController", "Spring @RestController", "Cadastro, busca e atualização\nde status de animais resgatados.\n(controller/)")
+    Component(adocaoCtrl, "AdocaoController", "Spring @RestController", "Solicitação, aprovação e\nacompanhamento de adoções.\n(controller/)")
+    Component(vetCtrl, "RegistroVetController", "Spring @RestController", "Registro de atendimentos,\nprontuários e laudos clínicos.\n(controller/)")
+    Component(usuarioCtrl, "UsuarioController", "Spring @RestController", "Cadastro de usuários e\ngerência de perfis especializados.\n(controller/)")
+    Component(doacaoCtrl, "DoacaoController", "Spring @RestController", "Registro de doações e\nrelatórios de impacto.\n(controller/)")
+
+    Component(animalSvc, "AnimalService", "Spring @Service", "Ciclo de vida do animal;\ntransições de StatusAnimal.\n(service/)")
+    Component(adocaoSvc, "AdocaoService", "Spring @Service", "Processo de adoção: análise,\naprovação, contrato.\n(service/)")
+    Component(vetSvc, "RegistroVetService", "Spring @Service", "Prontuários, vacinas;\nlibera animal para adoção.\n(service/)")
+    Component(usuarioSvc, "UsuarioService", "Spring @Service", "Gestão de usuários e perfis\n1:1 (Abordagem C).\n(service/)")
+    Component(doacaoSvc, "DoacaoService", "Spring @Service", "Processamento de doações e\nintegração com pagamento.\n(service/)")
+
+    Component(repos, "Repositories", "Spring Data JPA @Repository", "AnimalRepository, AdocaoRepository,\nRegistroVetRepository, UsuarioRepository,\nDoacaoRepository.\n(repository/)")
+}
+
+Rel(spa, security, "Requisições com Bearer Token", "HTTPS / JWT")
+Rel(security, animalCtrl, "Encaminha após autenticação")
+Rel(security, adocaoCtrl, "Encaminha após autenticação")
+Rel(security, vetCtrl, "Encaminha após autenticação")
+Rel(security, usuarioCtrl, "Encaminha após autenticação")
+Rel(security, doacaoCtrl, "Encaminha após autenticação")
+Rel(animalCtrl, animalSvc, "Delega lógica de negócio")
+Rel(adocaoCtrl, adocaoSvc, "Delega lógica de negócio")
+Rel(vetCtrl, vetSvc, "Delega lógica de negócio")
+Rel(usuarioCtrl, usuarioSvc, "Delega lógica de negócio")
+Rel(doacaoCtrl, doacaoSvc, "Delega lógica de negócio")
+Rel(animalSvc, repos, "Persiste e consulta")
+Rel(adocaoSvc, repos, "Persiste e consulta")
+Rel(vetSvc, repos, "Persiste e consulta")
+Rel(usuarioSvc, repos, "Persiste e consulta")
+Rel(doacaoSvc, repos, "Persiste e consulta")
+Rel(repos, db, "Executa queries via", "JDBC / JPA")
+Rel(doacaoSvc, email, "Envia notificações de doação", "SMTP/TLS")
+Rel(doacaoSvc, pagamento, "Processa pagamentos", "HTTPS/REST")
+
 @enduml

@@ -264,19 +264,17 @@ security/            — JwtFilter, JwtUtil, UserDetailsServiceImpl
 
 #### C4 Nível 1 — Contexto
 
-<!-- TODO: inserir imagem -->
-| Contexto |
+| ![C4 Nível 1 — Contexto](docs/diagrams/png/05-c4-contexto.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 5** — C4 Nível 1: Diagrama de Contexto do PataAmiga |
 
 Fonte PlantUML: [`docs/diagrams/puml/05-c4-contexto.puml`](docs/diagrams/puml/05-c4-contexto.puml)
 
 #### C4 Nível 2 — Containers
 
-<!-- TODO: inserir imagem -->
-| Containers |
+| ![C4 Nível 2 — Containers](docs/diagrams/png/06-c4-containers.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 6** — C4 Nível 2: Diagrama de Containers do PataAmiga |
 
 Fonte PlantUML: [`docs/diagrams/puml/06-c4-containers.puml`](docs/diagrams/puml/06-c4-containers.puml)
 
@@ -288,10 +286,9 @@ Fonte PlantUML: [`docs/diagrams/puml/06-c4-containers.puml`](docs/diagrams/puml/
 
 #### Diagrama de Componentes (C4 Nível 3)
 
-<!-- TODO: inserir imagem -->
-| Componentes do Backend |
+| ![C4 Nível 3 — Componentes](docs/diagrams/png/07-c4-componentes.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 7** — C4 Nível 3: Componentes do Backend PataAmiga |
 
 Fonte PlantUML: [`docs/diagrams/puml/07-c4-componentes.puml`](docs/diagrams/puml/07-c4-componentes.puml)
 
