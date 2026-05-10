@@ -1,4 +1,249 @@
 @startuml 09-classes
 ' PataAmiga — Diagrama de Classes (seção 3.3)
-' TODO
+' Modelo de domínio com Abordagem C: Usuario base + 5 perfis 1:1 opcionais.
+
+title Diagrama de Classes — PataAmiga (Modelo de Domínio)
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #FDFDFD
+    BorderColor #555555
+    ArrowColor #555555
+}
+skinparam enum {
+    BackgroundColor #FFF9E6
+    BorderColor #B8860B
+}
+
+' ============================================================
+'  USUÁRIO + PERFIS (Abordagem C — composição 1:1 opcional)
+' ============================================================
+
+class Usuario {
+    - id: Long
+    - nome: String
+    - email: String
+    - senha: String
+    - cpf: String
+    - telefone: String
+    - endereco: String
+    - dataCriacao: LocalDateTime
+    + autenticar(senha: String): boolean
+    + adicionarPerfil(perfil: Perfil): void
+    + possuiPerfil(tipo: TipoPerfil): boolean
+}
+
+abstract class Perfil {
+    # id: Long
+    # ativo: boolean
+    # dataAtivacao: LocalDate
+    + ativar(): void
+    + desativar(): void
+}
+
+class PerfilAdotante {
+    - perfilFamiliar: String
+    - moradiaAdequada: boolean
+    - possuiOutrosAnimais: boolean
+    - formularioInteresse: String
+    + registrarInteresse(animal: Animal): Adocao
+}
+
+class PerfilDoador {
+    - tipoDoadorPreferido: TipoDoacao
+    - frequenciaPreferida: String
+    - recebeRelatorios: boolean
+    + listarHistorico(): List<Doacao>
+}
+
+class PerfilVoluntario {
+    - disponibilidadeSemanal: String
+    - areaAtuacao: String
+    - dataIngresso: LocalDate
+    + registrarAnimal(dados: AnimalDTO): Animal
+    + agendarAtendimento(animal: Animal): void
+}
+
+class PerfilVeterinario {
+    - crmv: String
+    - especialidade: String
+    + registrarAtendimento(animal: Animal, dados: AtendimentoDTO): RegistroVeterinario
+    + emitirLaudoLiberacao(animal: Animal): void
+}
+
+class PerfilCoordenador {
+    - cargo: String
+    - permissoesAdministrativas: String
+    + aprovarAdocao(adocao: Adocao): void
+    + rejeitarAdocao(adocao: Adocao, motivo: String): void
+    + emitirRelatorio(tipo: TipoRelatorio): Relatorio
+}
+
+Perfil <|-- PerfilAdotante
+Perfil <|-- PerfilDoador
+Perfil <|-- PerfilVoluntario
+Perfil <|-- PerfilVeterinario
+Perfil <|-- PerfilCoordenador
+
+Usuario "1" *-- "0..1" PerfilAdotante     : possui >
+Usuario "1" *-- "0..1" PerfilDoador       : possui >
+Usuario "1" *-- "0..1" PerfilVoluntario   : possui >
+Usuario "1" *-- "0..1" PerfilVeterinario  : possui >
+Usuario "1" *-- "0..1" PerfilCoordenador  : possui >
+
+' ============================================================
+'  DOMÍNIO ANIMAL
+' ============================================================
+
+class Animal {
+    - id: Long
+    - nome: String
+    - especie: Especie
+    - raca: String
+    - idadeEstimada: int
+    - sexo: Sexo
+    - porte: Porte
+    - status: StatusAnimal
+    - foto: String
+    - descricao: String
+    - dataResgate: LocalDate
+    + atualizarStatus(novo: StatusAnimal): void
+    + estaDisponivel(): boolean
+}
+
+enum StatusAnimal {
+    RESGATADO
+    EM_TRATAMENTO
+    DISPONIVEL
+    EM_PROCESSO_ADOCAO
+    ADOTADO
+    OBITO
+}
+
+enum Especie {
+    CACHORRO
+    GATO
+    OUTRO
+}
+
+enum Sexo {
+    MACHO
+    FEMEA
+}
+
+enum Porte {
+    PEQUENO
+    MEDIO
+    GRANDE
+}
+
+Animal --> StatusAnimal
+Animal --> Especie
+Animal --> Sexo
+Animal --> Porte
+
+' ============================================================
+'  ATENDIMENTO VETERINÁRIO
+' ============================================================
+
+class RegistroVeterinario {
+    - id: Long
+    - dataAtendimento: LocalDateTime
+    - tipo: TipoAtendimento
+    - descricao: String
+    - vacinasAplicadas: String
+    - procedimentos: String
+    - observacoes: String
+    - liberaParaAdocao: boolean
+    + emitirRelatorio(): String
+}
+
+enum TipoAtendimento {
+    CONSULTA
+    VACINACAO
+    CIRURGIA
+    EXAME
+    LAUDO_LIBERACAO
+}
+
+Animal "1" --> "0..*" RegistroVeterinario : possui >
+PerfilVeterinario "1" --> "0..*" RegistroVeterinario : registra >
+RegistroVeterinario --> TipoAtendimento
+
+' ============================================================
+'  PROCESSO DE ADOÇÃO
+' ============================================================
+
+class Adocao {
+    - id: Long
+    - dataSolicitacao: LocalDateTime
+    - dataAprovacao: LocalDateTime
+    - dataConclusao: LocalDateTime
+    - status: StatusAdocao
+    - motivoRejeicao: String
+    - contratoPdf: String
+    - acompanhamentoPosAdocao: String
+    + aprovar(coord: PerfilCoordenador): void
+    + rejeitar(motivo: String): void
+    + concluir(): void
+    + registrarPosAdocao(texto: String): void
+}
+
+enum StatusAdocao {
+    EM_ANALISE
+    EM_ENTREVISTA
+    APROVADA
+    REJEITADA
+    CONCLUIDA
+}
+
+Animal "1" --> "0..*" Adocao : recebe solicitações de >
+PerfilAdotante "1" --> "0..*" Adocao : solicita >
+PerfilCoordenador "0..1" --> "0..*" Adocao : avalia >
+Adocao --> StatusAdocao
+
+' ============================================================
+'  DOAÇÕES E RELATÓRIOS
+' ============================================================
+
+class Doacao {
+    - id: Long
+    - valor: BigDecimal
+    - tipo: TipoDoacao
+    - dataDoacao: LocalDateTime
+    - destinacao: String
+    - comprovante: String
+    - statusPagamento: String
+    + confirmarPagamento(): void
+    + emitirRecibo(): String
+}
+
+enum TipoDoacao {
+    PONTUAL
+    RECORRENTE
+}
+
+class Relatorio {
+    - id: Long
+    - tipo: TipoRelatorio
+    - periodoInicio: LocalDate
+    - periodoFim: LocalDate
+    - dadosAgregados: String
+    - geradoEm: LocalDateTime
+    + exportarPdf(): String
+}
+
+enum TipoRelatorio {
+    ANIMAIS
+    ADOCOES
+    DOACOES
+    OPERACIONAL
+}
+
+PerfilDoador "1" --> "0..*" Doacao : realiza >
+PerfilCoordenador "1" --> "0..*" Relatorio : emite >
+Doacao --> TipoDoacao
+Relatorio --> TipoRelatorio
+
 @enduml

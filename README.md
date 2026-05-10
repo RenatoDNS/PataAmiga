@@ -294,10 +294,24 @@ Fonte PlantUML: [`docs/diagrams/puml/07-c4-componentes.puml`](docs/diagrams/puml
 
 #### Diagrama de Implantação
 
-<!-- TODO: inserir imagem -->
-| Infraestrutura de Implantação |
+A implantação é orquestrada por **Docker Compose** (arquivo `docker-compose.yml` na raiz do projeto). Três containers compartilham a rede bridge `pataamiga-net` em um host Linux com Docker Engine, e dois sistemas externos são consumidos pela API:
+
+| Container | Imagem Docker | Portas (host:container) | Responsabilidade | Volume |
+|---|---|:---:|---|---|
+| `pataamiga-frontend` | `nginx:alpine` | `4200:80` | Servir o build estático do SPA Angular 17 | — |
+| `pataamiga-backend` | `eclipse-temurin:21-jre` | `8080:8080` | API REST Spring Boot 3.x (`/api/v1/**`) com JWT e RBAC | — |
+| `pataamiga-db` | `postgres:16-alpine` | `5432:5432` | Banco PostgreSQL com schema `pataamiga` | `pataamiga-pgdata` |
+
+| Sistema externo | Protocolo | Uso |
+|---|---|---|
+| Serviço de E-mail (SMTP) | SMTP/TLS | Notificações de adoção e confirmações de doação |
+| Gateway de Pagamento | HTTPS/REST | Processamento de doações via Pix e cartão |
+
+**Ordem de inicialização:** `pataamiga-db` (com `healthcheck`) → `pataamiga-backend` (`depends_on: db`) → `pataamiga-frontend` (`depends_on: backend`).
+
+| ![Diagrama de Implantação](docs/diagrams/png/08-implantacao.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 8** — Diagrama de Implantação do PataAmiga (Docker Compose) |
 
 Fonte PlantUML: [`docs/diagrams/puml/08-implantacao.puml`](docs/diagrams/puml/08-implantacao.puml)
 
@@ -307,10 +321,25 @@ Fonte PlantUML: [`docs/diagrams/puml/08-implantacao.puml`](docs/diagrams/puml/08
 
 > Modelo de domínio com entidades, atributos, métodos e relacionamentos.
 
-<!-- TODO: inserir imagem -->
-| Classes do Domínio |
+O modelo adota a **Abordagem C** para usuários: uma entidade `Usuario` central concentra os dados pessoais (nome, e-mail, CPF, telefone, endereço, senha), e cinco perfis especializados — `PerfilAdotante`, `PerfilDoador`, `PerfilVoluntario`, `PerfilVeterinario` e `PerfilCoordenador` — estendem `Usuario` por composição **1:1 opcional**. Uma mesma pessoa pode acumular qualquer combinação de papéis sem duplicar dados de cadastro.
+
+#### Principais classes do domínio
+
+| Classe | Tipo | Papel no modelo |
+|---|---|---|
+| `Usuario` | Entidade central | Identidade comum a todos os atores; responsável por autenticação |
+| `Perfil` (abstrata) | Superclasse | Define `ativo`, `dataAtivacao` e operações genéricas dos perfis |
+| `PerfilAdotante` / `PerfilDoador` / `PerfilVoluntario` / `PerfilVeterinario` / `PerfilCoordenador` | Perfis 1:1 | Especializam `Usuario` com atributos e operações específicas de cada papel |
+| `Animal` | Entidade central do negócio | Estado controlado pelo enum `StatusAnimal`; relaciona-se com prontuários e adoções |
+| `RegistroVeterinario` | Entidade | Cada atendimento veterinário registrado; `liberaParaAdocao` aciona transição de status |
+| `Adocao` | Entidade | Processo de adoção com ciclo de vida `EM_ANALISE → … → CONCLUIDA`/`REJEITADA` |
+| `Doacao` | Entidade | Aporte pontual ou recorrente associado a um `PerfilDoador` |
+| `Relatorio` | Entidade | Saída agregada gerada por um `PerfilCoordenador` |
+| `StatusAnimal`, `StatusAdocao`, `TipoDoacao`, `TipoRelatorio`, `TipoAtendimento`, `Especie`, `Sexo`, `Porte` | Enums | Estados e classificadores do domínio |
+
+| ![Diagrama de Classes](docs/diagrams/png/09-classes.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 9** — Diagrama de Classes do Modelo de Domínio do PataAmiga |
 
 Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-classes.puml)
 

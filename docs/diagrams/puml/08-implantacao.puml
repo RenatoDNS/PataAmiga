@@ -1,4 +1,75 @@
 @startuml 08-implantacao
 ' PataAmiga — Diagrama de Implantação (seção 3.2)
-' TODO
+
+title Diagrama de Implantação — PataAmiga (Docker Compose)
+
+skinparam shadowing false
+skinparam node {
+    BackgroundColor #FDFDFD
+    BorderColor #555555
+}
+skinparam database {
+    BackgroundColor #E8F1FA
+    BorderColor #2E6FAA
+}
+skinparam component {
+    BackgroundColor #F5F5F5
+    BorderColor #888888
+}
+skinparam cloud {
+    BackgroundColor #FFFDF0
+    BorderColor #B8860B
+}
+
+cloud "Internet" as internet {
+    actor "Usuários\n(Adotante, Voluntário,\nVeterinário, Coordenador, Doador)" as usuarios
+}
+
+cloud "Provedores Externos" as externos {
+    [Serviço de E-mail\n(SMTP)] as smtp <<external>>
+    [Gateway de Pagamento\n(REST/HTTPS)] as gateway <<external>>
+}
+
+node "Host de Aplicação\n<<Linux / Docker Engine>>" as host {
+
+    node "Container: pataamiga-frontend\n<<Docker — nginx:alpine>>" as nodeFront {
+        component "Frontend SPA\nAngular 17 (build estático)\nporta 80 (interno)\nexposto em 4200" as front
+    }
+
+    node "Container: pataamiga-backend\n<<Docker — eclipse-temurin:21-jre>>" as nodeBack {
+        component "Backend API\nSpring Boot 3.x\npataamiga.jar\nporta 8080" as back
+        artifact "application.yml\n(profile: docker)" as appyml
+        back .. appyml
+    }
+
+    node "Container: pataamiga-db\n<<Docker — postgres:16-alpine>>" as nodeDb {
+        database "PostgreSQL 16\nschema: pataamiga\nporta 5432" as db
+        artifact "Volume persistente\n(pataamiga-pgdata)" as volume
+        db .. volume
+    }
+
+    node "Rede Docker\n<<bridge — pataamiga-net>>" as net
+}
+
+usuarios --> front : HTTPS\n(porta 4200)
+front --> back : HTTPS / JSON\n(API REST /api/v1/**)
+back --> db : JDBC / JPA\n(Hibernate, porta 5432)
+back --> smtp : SMTP/TLS\n(notificações)
+back --> gateway : HTTPS/REST\n(processamento de doações)
+
+front -[hidden]- net
+back -[hidden]- net
+db -[hidden]- net
+
+note right of host
+  Implantação orquestrada por
+  **docker-compose.yml** na raiz
+  do repositório. Os três
+  containers compartilham a rede
+  bridge **pataamiga-net** e
+  iniciam na ordem: db → backend
+  → frontend (depends_on +
+  healthcheck no Postgres).
+end note
+
 @enduml
