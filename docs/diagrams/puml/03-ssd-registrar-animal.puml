@@ -1,4 +1,41 @@
 @startuml 03-ssd-registrar-animal
-' PataAmiga — Sequência do Sistema (SSD) do UC-02 Registrar Animal Resgatado (caixa-preta, seção 2.3)
-' TODO
+' PataAmiga — SSD UC-02 Registrar Animal Resgatado (seção 2.3)
+' Visão caixa-preta: Voluntário ↔ :Sistema
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Voluntário" as V
+participant ":Sistema" as S
+
+V -> S : registrarAnimalResgatado(nome, especie, raca, sexo, porte, idadeEstimada, descricao)
+activate S
+note right of S
+  Cria instância de Animal
+  com status RESGATADO e
+  prontuário vazio associado.
+end note
+S --> V : {idAnimal, protocolo, status = RESGATADO}
+deactivate S
+
+opt Associar foto ao cadastro
+  V -> S : associarFoto(idAnimal, fotoFile)
+  activate S
+  S --> V : urlFoto
+  deactivate S
+end
+
 @enduml

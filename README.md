@@ -189,10 +189,10 @@ Fonte PlantUML: [`docs/diagrams/puml/01-caso-de-uso.puml`](docs/diagrams/puml/01
 
 > Diagramas de Sequência do Sistema (SSD) — visão **caixa-preta** das três operações de sistema escolhidas. Cada SSD origina um **contrato de operação** com pré-condições e pós-condições.
 
-<!-- TODO: inserir imagens -->
 | UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
 | :---: | :---: | :---: |
-| _Em desenvolvimento_ | _Em desenvolvimento_ | _Em desenvolvimento_ |
+| ![SSD UC-01](docs/diagrams/png/02-ssd-solicitar-adocao.png) | ![SSD UC-02](docs/diagrams/png/03-ssd-registrar-animal.png) | ![SSD UC-03](docs/diagrams/png/04-ssd-registrar-atendimento.png) |
+| **Figura 2** — SSD UC-01 Solicitar Adoção | **Figura 3** — SSD UC-02 Registrar Animal | **Figura 4** — SSD UC-03 Registrar Atendimento |
 
 Fontes PlantUML:
 - [`docs/diagrams/puml/02-ssd-solicitar-adocao.puml`](docs/diagrams/puml/02-ssd-solicitar-adocao.puml)
@@ -201,7 +201,40 @@ Fontes PlantUML:
 
 #### Contratos de Operação
 
-> _Em desenvolvimento — um contrato por operação de sistema chave (Operação · Referências cruzadas · Pré-condições · Pós-condições)._
+> Um contrato por operação de sistema principal, derivado do respectivo SSD.
+
+---
+
+**CO-01 — `submeterSolicitacaoAdocao`**
+
+| Campo | Descrição |
+|---|---|
+| **Operação** | `submeterSolicitacaoAdocao(idAnimal: Long, formularioInteresse: FormularioAdocaoDTO)` |
+| **Referências cruzadas** | UC-01 Solicitar Adoção |
+| **Pré-condições** | Animal com `id = idAnimal` existe e possui `status = DISPONIVEL`. Adotante autenticado no sistema. |
+| **Pós-condições** | Instância de `Adocao` criada com `status = EM_ANALISE` e associada ao `Animal` e ao `PerfilAdotante`. `Animal.status` mantido como `DISPONIVEL`. Notificação enviada ao Coordenador. |
+
+---
+
+**CO-02 — `registrarAnimalResgatado`**
+
+| Campo | Descrição |
+|---|---|
+| **Operação** | `registrarAnimalResgatado(dados: AnimalRequestDTO)` |
+| **Referências cruzadas** | UC-02 Registrar Animal Resgatado |
+| **Pré-condições** | Voluntário autenticado. `dados.nome` e `dados.especie` não vazios. |
+| **Pós-condições** | Instância de `Animal` criada com `status = RESGATADO` e `id` gerado. `RegistroVeterinario` inicial (vazio) associado ao animal. |
+
+---
+
+**CO-03 — `registrarAtendimento`**
+
+| Campo | Descrição |
+|---|---|
+| **Operação** | `registrarAtendimento(idAnimal: Long, dados: AtendimentoRequestDTO)` |
+| **Referências cruzadas** | UC-03 Registrar Atendimento Veterinário; UC-07 Atualizar Status do Animal (include) |
+| **Pré-condições** | Animal com `id = idAnimal` existe. Veterinário autenticado. `dados.descricao` não vazio. |
+| **Pós-condições** | Instância de `RegistroVeterinario` criada e associada ao `Animal`. `Animal.status` atualizado para `EM_TRATAMENTO` caso status anterior fosse `RESGATADO`. |
 
 ---
 

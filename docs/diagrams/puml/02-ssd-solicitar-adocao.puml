@@ -1,4 +1,44 @@
 @startuml 02-ssd-solicitar-adocao
-' PataAmiga — Sequência do Sistema (SSD) do UC-01 Solicitar Adoção (caixa-preta, seção 2.3)
-' TODO
+' PataAmiga — SSD UC-01 Solicitar Adoção (seção 2.3)
+' Visão caixa-preta: Adotante ↔ :Sistema
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Adotante" as A
+participant ":Sistema" as S
+
+A -> S : buscarAnimaisDisponiveis(especie, porte, sexo)
+activate S
+S --> A : listaAnimais
+deactivate S
+
+A -> S : consultarAnimal(idAnimal)
+activate S
+S --> A : dadosAnimal
+deactivate S
+
+A -> S : submeterSolicitacaoAdocao(idAnimal, formularioInteresse)
+activate S
+note right of S
+  Cria instância de Adocao
+  com status EM_ANALISE.
+  Notifica Coordenador.
+end note
+S --> A : {protocolo, statusSolicitacao = EM_ANALISE}
+deactivate S
+
 @enduml
