@@ -1,4 +1,64 @@
 @startuml 15-com-registrar-atendimento
 ' PataAmiga — Diagrama de Comunicação do UC-03 Registrar Atendimento Veterinário (seção 3.5)
-' TODO
+' Mesma colaboração da sequência 12, vista como objetos numerados.
+' Cobre apenas a operação principal (registrarAtendimento); o caminho de laudo
+' é mostrado em texto no README para não poluir a colaboração.
+
+title Diagrama de Comunicação — UC-03 Registrar Atendimento Veterinário
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam object {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam object<<ator>> {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam object<<database>> {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+object "Veterinario" as Vet <<ator>>
+
+package "Frontend" {
+  object ":SPA Angular" as SPA
+}
+
+package "Backend Spring Boot" {
+  object ":JwtFilter" as JWT
+  object ":RegistroVetController" as VetCtrl
+  object ":RegistroVetService" as VetSvc
+  object ":AnimalService" as AnimSvc
+  object ":AnimalRepository" as AnimRepo
+  object ":RegistroVetRepository" as VetRepo
+}
+
+object "PostgreSQL" as DB <<database>>
+
+Vet      --> SPA      : 1: preencherAtendimento(dados)
+SPA      --> JWT      : 2: POST /api/v1/registros-vet
+JWT      --> VetCtrl  : 3: criar(request) [token válido]
+VetCtrl  --> VetSvc   : 4: registrar(idAnimal, dados, idVeterinario)
+VetSvc   --> AnimRepo : 5: findById(idAnimal)
+AnimRepo --> DB       : 6: SELECT animal
+DB       --> AnimRepo : 7: row
+AnimRepo --> VetSvc   : 8: Animal
+VetSvc   --> VetRepo  : 9: save(new RegistroVeterinario())
+VetRepo  --> DB       : 10: INSERT registro_vet
+DB       --> VetRepo  : 11: id
+VetRepo  --> VetSvc   : 12: RegistroVeterinario
+VetSvc   --> AnimSvc  : 13: atualizarStatus(idAnimal, EM_TRATAMENTO) [include UC-07]
+AnimSvc  --> AnimRepo : 14: save(animal.status)
+AnimRepo --> DB       : 15: UPDATE animal SET status='EM_TRATAMENTO'
+DB       --> AnimRepo : 16: ok
+AnimRepo --> AnimSvc  : 17: Animal
+AnimSvc  --> VetSvc   : 18: Animal atualizado
+VetSvc   --> VetCtrl  : 19: RegistroVeterinario
+VetCtrl  --> JWT      : 20: 201 Created
+JWT      --> SPA      : 21: response JSON
+SPA      --> Vet      : 22: idAtendimento + statusAnimal=EM_TRATAMENTO
+
 @enduml

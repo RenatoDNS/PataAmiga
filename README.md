@@ -347,12 +347,25 @@ Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-cla
 
 ### 3.4 Diagramas de Sequência
 
-> Realização interna (caixa-branca) de cada caso de uso — atores, controllers, services, repositórios e banco.
+> Realização interna (**caixa-branca**) dos três casos de uso escolhidos. Cada diagrama atravessa as camadas da arquitetura — `SPA Angular` → `JwtFilter` → `Controller` → `Service` → `Repository` → `PostgreSQL` — refinando as operações de sistema que aparecem nos SSDs da seção 2.3 em chamadas internas entre componentes (mesmos componentes do C4 Nível 3, Figura 7).
 
-<!-- TODO: inserir imagens -->
+#### Componentes participantes por caso de uso
+
+| Caso de Uso | Controller | Service(s) | Repository(s) |
+|---|---|---|---|
+| **UC-01** Solicitar Adoção | `AnimalController`, `AdocaoController` | `AnimalService`, `AdocaoService` | `AnimalRepository`, `AdocaoRepository` |
+| **UC-02** Registrar Animal Resgatado | `AnimalController` | `AnimalService` | `AnimalRepository`, `RegistroVetRepository` |
+| **UC-03** Registrar Atendimento Veterinário | `AnimalController`, `RegistroVetController` | `AnimalService`, `RegistroVetService` | `AnimalRepository`, `RegistroVetRepository` |
+
 | UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
 | :---: | :---: | :---: |
-| _Em desenvolvimento_ | _Em desenvolvimento_ | _Em desenvolvimento_ |
+| ![Sequência UC-01](docs/diagrams/png/10-seq-solicitar-adocao.png) | ![Sequência UC-02](docs/diagrams/png/11-seq-registrar-animal.png) | ![Sequência UC-03](docs/diagrams/png/12-seq-registrar-atendimento.png) |
+| **Figura 10** — Realização UC-01 Solicitar Adoção | **Figura 11** — Realização UC-02 Registrar Animal | **Figura 12** — Realização UC-03 Registrar Atendimento |
+
+**Observações de modelagem:**
+- A autenticação é representada pelo passo `validarToken()` em `JwtFilter`, exigido em toda requisição autenticada.
+- O UC-03 ilustra explicitamente o relacionamento **«include» UC-07** Atualizar Status do Animal — `RegistroVetService` delega a `AnimalService.atualizarStatus(...)` após registrar o atendimento.
+- Validações de regra de negócio (ex.: `Animal.status == DISPONIVEL` antes de criar `Adocao`) aparecem como auto-mensagens ou `note right of` no respectivo `Service`.
 
 Fontes PlantUML:
 - [`docs/diagrams/puml/10-seq-solicitar-adocao.puml`](docs/diagrams/puml/10-seq-solicitar-adocao.puml)
@@ -363,12 +376,20 @@ Fontes PlantUML:
 
 ### 3.5 Diagramas de Comunicação
 
-> Mesmas mensagens dos diagramas de sequência da seção 3.4, vistas como **colaboração entre objetos** (numeração sobre as conexões).
+> Os diagramas de comunicação apresentam **a mesma colaboração** dos diagramas de sequência da seção 3.4, porém vistos como **rede de objetos** com **numeração de mensagens** em vez de eixo temporal vertical. Enquanto o diagrama de sequência destaca a **ordem temporal**, o de comunicação destaca os **vínculos estruturais** entre os objetos participantes.
 
-<!-- TODO: inserir imagens -->
+| Aspecto | Sequência (3.4) | Comunicação (3.5) |
+|---|---|---|
+| **Foco** | Ordem temporal das mensagens | Vínculos estruturais entre objetos |
+| **Layout** | Linhas de vida verticais | Objetos em rede |
+| **Ordenação** | Posição vertical | Numeração explícita (`1:`, `2:`, …) |
+
 | UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
 | :---: | :---: | :---: |
-| _Em desenvolvimento_ | _Em desenvolvimento_ | _Em desenvolvimento_ |
+| ![Comunicação UC-01](docs/diagrams/png/13-com-solicitar-adocao.png) | ![Comunicação UC-02](docs/diagrams/png/14-com-registrar-animal.png) | ![Comunicação UC-03](docs/diagrams/png/15-com-registrar-atendimento.png) |
+| **Figura 13** — Comunicação UC-01 Solicitar Adoção | **Figura 14** — Comunicação UC-02 Registrar Animal | **Figura 15** — Comunicação UC-03 Registrar Atendimento |
+
+Os objetos colaboradores estão agrupados visualmente em pacotes (`Frontend`, `Backend Spring Boot`) e o `PostgreSQL` aparece como banco externo. Para o UC-03, o diagrama de comunicação modela apenas a operação principal (`registrarAtendimento`) — o fluxo alternativo de emissão de laudo é coberto no diagrama de sequência (Figura 12).
 
 Fontes PlantUML:
 - [`docs/diagrams/puml/13-com-solicitar-adocao.puml`](docs/diagrams/puml/13-com-solicitar-adocao.puml)

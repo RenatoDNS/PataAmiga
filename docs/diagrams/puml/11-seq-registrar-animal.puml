@@ -1,4 +1,113 @@
 @startuml 11-seq-registrar-animal
 ' PataAmiga — Sequência de Realização do UC-02 Registrar Animal Resgatado (seção 3.4)
-' TODO
+' Visão caixa-branca: Voluntário ↔ SPA ↔ JwtFilter ↔ AnimalController ↔ AnimalService ↔ Repositories ↔ DB
+' Mensagens derivadas do SSD 03 (CO-02).
+
+title Sequência de Realização — UC-02 Registrar Animal Resgatado (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Voluntário" as V
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AnimalController" as AnimCtrl
+participant ":AnimalService" as AnimSvc
+participant ":AnimalRepository" as AnimRepo
+participant ":RegistroVetRepository" as VetRepo
+database "PostgreSQL" as DB
+
+== Registrar animal resgatado ==
+
+V -> SPA : preencherCadastroAnimal(dados)
+SPA -> JWT : POST /api/v1/animais\n{nome, especie, raca, sexo, porte, ...}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AnimCtrl : criar(AnimalRequestDTO)
+activate AnimCtrl
+AnimCtrl -> AnimSvc : registrarResgate(dados, idVoluntario)
+activate AnimSvc
+
+AnimSvc -> AnimRepo : save(new Animal(RESGATADO))
+activate AnimRepo
+AnimRepo -> DB : INSERT INTO animal(...) VALUES(...)
+DB --> AnimRepo : id, dataResgate
+AnimRepo --> AnimSvc : Animal persistido
+deactivate AnimRepo
+
+note right of AnimSvc
+  Cria prontuário inicial vazio
+  associado ao animal recém-criado
+  (pré-condição p/ UC-03).
+end note
+
+AnimSvc -> VetRepo : save(new RegistroVeterinario(idAnimal))
+activate VetRepo
+VetRepo -> DB : INSERT INTO registro_vet(...) VALUES(...)
+DB --> VetRepo : id
+VetRepo --> AnimSvc : RegistroVeterinario
+deactivate VetRepo
+
+AnimSvc --> AnimCtrl : Animal
+deactivate AnimSvc
+AnimCtrl --> JWT : AnimalResponseDTO\n{idAnimal, protocolo, status=RESGATADO}
+deactivate AnimCtrl
+JWT --> SPA : 201 Created + JSON
+deactivate JWT
+SPA --> V : protocolo + status
+
+== Associar foto (opcional) ==
+
+opt Upload de foto
+  V -> SPA : selecionarFoto(arquivo)
+  SPA -> JWT : POST /api/v1/animais/{id}/foto\n(multipart/form-data)
+  activate JWT
+  JWT -> JWT : validarToken()
+  JWT -> AnimCtrl : associarFoto(id, file)
+  activate AnimCtrl
+  AnimCtrl -> AnimSvc : associarFoto(id, file)
+  activate AnimSvc
+
+  AnimSvc -> AnimRepo : findById(id)
+  activate AnimRepo
+  AnimRepo -> DB : SELECT * FROM animal WHERE id=?
+  DB --> AnimRepo : row
+  AnimRepo --> AnimSvc : Animal
+  deactivate AnimRepo
+
+  AnimSvc -> AnimSvc : armazenarArquivo(file) → urlFoto
+
+  AnimSvc -> AnimRepo : save(animal.foto = urlFoto)
+  activate AnimRepo
+  AnimRepo -> DB : UPDATE animal SET foto=? WHERE id=?
+  DB --> AnimRepo : ok
+  AnimRepo --> AnimSvc : Animal atualizado
+  deactivate AnimRepo
+
+  AnimSvc --> AnimCtrl : urlFoto
+  deactivate AnimSvc
+  AnimCtrl --> JWT : 200 OK + {urlFoto}
+  deactivate AnimCtrl
+  JWT --> SPA : urlFoto
+  deactivate JWT
+  SPA --> V : prévia da foto
+end
+
 @enduml

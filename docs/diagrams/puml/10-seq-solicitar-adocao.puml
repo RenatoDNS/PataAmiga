@@ -1,4 +1,105 @@
 @startuml 10-seq-solicitar-adocao
 ' PataAmiga — Sequência de Realização do UC-01 Solicitar Adoção (seção 3.4)
-' TODO
+' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ Controllers ↔ Services ↔ Repositories ↔ DB
+' Mensagens derivadas do SSD 02 (CO-01).
+
+title Sequência de Realização — UC-01 Solicitar Adoção (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Adotante" as A
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AnimalController" as AnimCtrl
+participant ":AdocaoController" as AdoCtrl
+participant ":AnimalService" as AnimSvc
+participant ":AdocaoService" as AdoSvc
+participant ":AnimalRepository" as AnimRepo
+participant ":AdocaoRepository" as AdoRepo
+database "PostgreSQL" as DB
+
+== Buscar animais disponíveis ==
+
+A -> SPA : filtrar(especie, porte, sexo)
+SPA -> JWT : GET /api/v1/animais?status=DISPONIVEL
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AnimCtrl : listar(filtros)
+activate AnimCtrl
+AnimCtrl -> AnimSvc : buscarDisponiveis(filtros)
+activate AnimSvc
+AnimSvc -> AnimRepo : findByStatusAndFiltros(DISPONIVEL, filtros)
+activate AnimRepo
+AnimRepo -> DB : SELECT * FROM animal WHERE status='DISPONIVEL' ...
+DB --> AnimRepo : rows
+AnimRepo --> AnimSvc : List<Animal>
+deactivate AnimRepo
+AnimSvc --> AnimCtrl : List<Animal>
+deactivate AnimSvc
+AnimCtrl --> JWT : List<AnimalResponseDTO>
+deactivate AnimCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> A : exibirListaAnimais
+
+== Submeter solicitação de adoção ==
+
+A -> SPA : preencherFormulario(idAnimal, dadosInteresse)
+SPA -> JWT : POST /api/v1/adocoes\n{idAnimal, formulario}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AdoCtrl : criar(AdocaoRequestDTO)
+activate AdoCtrl
+AdoCtrl -> AdoSvc : solicitar(idAdotante, idAnimal, formulario)
+activate AdoSvc
+
+AdoSvc -> AnimRepo : findById(idAnimal)
+activate AnimRepo
+AnimRepo -> DB : SELECT * FROM animal WHERE id=?
+DB --> AnimRepo : row
+AnimRepo --> AdoSvc : Animal
+deactivate AnimRepo
+
+note right of AdoSvc
+  Valida que
+  Animal.status == DISPONIVEL.
+  Lança AnimalIndisponivelException
+  em caso contrário.
+end note
+
+AdoSvc -> AdoRepo : save(new Adocao(idAnimal, idAdotante, EM_ANALISE))
+activate AdoRepo
+AdoRepo -> DB : INSERT INTO adocao(...) VALUES(...)
+DB --> AdoRepo : id, dataSolicitacao
+AdoRepo --> AdoSvc : Adocao persistida
+deactivate AdoRepo
+
+AdoSvc -> AdoSvc : notificarCoordenador(adocao)
+AdoSvc --> AdoCtrl : Adocao
+deactivate AdoSvc
+
+AdoCtrl --> JWT : AdocaoResponseDTO\n{protocolo, status=EM_ANALISE}
+deactivate AdoCtrl
+JWT --> SPA : 201 Created + JSON
+deactivate JWT
+SPA --> A : protocolo + status
+
 @enduml

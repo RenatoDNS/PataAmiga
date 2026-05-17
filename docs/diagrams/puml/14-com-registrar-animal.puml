@@ -1,4 +1,55 @@
 @startuml 14-com-registrar-animal
 ' PataAmiga — Diagrama de Comunicação do UC-02 Registrar Animal Resgatado (seção 3.5)
-' TODO
+' Mesma colaboração da sequência 11, vista como objetos numerados.
+
+title Diagrama de Comunicação — UC-02 Registrar Animal Resgatado
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam object {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam object<<ator>> {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam object<<database>> {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+object "Voluntario" as Vol <<ator>>
+
+package "Frontend" {
+  object ":SPA Angular" as SPA
+}
+
+package "Backend Spring Boot" {
+  object ":JwtFilter" as JWT
+  object ":AnimalController" as AnimCtrl
+  object ":AnimalService" as AnimSvc
+  object ":AnimalRepository" as AnimRepo
+  object ":RegistroVetRepository" as VetRepo
+}
+
+object "PostgreSQL" as DB <<database>>
+
+Vol      --> SPA      : 1: preencherCadastroAnimal(dados)
+SPA      --> JWT      : 2: POST /api/v1/animais
+JWT      --> AnimCtrl : 3: criar(request) [token válido]
+AnimCtrl --> AnimSvc  : 4: registrarResgate(dados, idVoluntario)
+AnimSvc  --> AnimRepo : 5: save(new Animal(RESGATADO))
+AnimRepo --> DB       : 6: INSERT animal
+DB       --> AnimRepo : 7: id
+AnimRepo --> AnimSvc  : 8: Animal persistido
+AnimSvc  --> VetRepo  : 9: save(new RegistroVeterinario())
+VetRepo  --> DB       : 10: INSERT registro_vet (vazio)
+DB       --> VetRepo  : 11: id
+VetRepo  --> AnimSvc  : 12: RegistroVeterinario
+AnimSvc  --> AnimCtrl : 13: Animal
+AnimCtrl --> JWT      : 14: 201 Created
+JWT      --> SPA      : 15: response JSON
+SPA      --> Vol      : 16: protocolo + status=RESGATADO
+
 @enduml
