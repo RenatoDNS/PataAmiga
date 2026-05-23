@@ -1,4 +1,68 @@
 @startuml 16-estado-animal
 ' PataAmiga — Diagrama de Estados: Ciclo de Vida do Animal (seção 3.6)
-' TODO
+' Estados refletem o enum StatusAnimal da classe Animal (ver 09-classes.puml).
+' Transições são acionadas pelos casos de uso UC-02, UC-03, UC-07, UC-09 e UC-10.
+
+title Diagrama de Estados — Ciclo de Vida do Animal
+
+skinparam shadowing false
+skinparam state {
+    BackgroundColor #FDFDFD
+    BorderColor #555555
+    ArrowColor #555555
+    FontColor #222222
+}
+skinparam ArrowFontSize 11
+
+[*] --> RESGATADO : registrarAnimalResgatado()\n[UC-02]
+
+RESGATADO : Animal recém-resgatado
+RESGATADO : aguardando triagem veterinária
+RESGATADO : entry / dataResgate := hoje
+
+EM_TRATAMENTO : Atendimentos veterinários em andamento
+EM_TRATAMENTO : (consultas, vacinas, cirurgias)
+EM_TRATAMENTO : entry / abrir RegistroVeterinario
+
+DISPONIVEL : Apto à adoção
+DISPONIVEL : visível na busca pública
+DISPONIVEL : entry / publicarPerfilNaPlataforma
+
+EM_PROCESSO_ADOCAO : Adoção aprovada,
+EM_PROCESSO_ADOCAO : aguardando contrato e entrega
+EM_PROCESSO_ADOCAO : entry / reservarAnimal
+
+ADOTADO : Adoção concluída,
+ADOTADO : acompanhamento pós-adoção ativo
+
+OBITO : Animal veio a óbito\n(estado terminal)
+
+RESGATADO       --> EM_TRATAMENTO       : registrarAtendimento()\n[UC-03 «include» UC-07]
+EM_TRATAMENTO   --> EM_TRATAMENTO       : novo atendimento\n[UC-03]
+EM_TRATAMENTO   --> DISPONIVEL          : emitirLaudoLiberacao()\n[UC-09 «include» UC-07]
+DISPONIVEL      --> EM_PROCESSO_ADOCAO  : aprovarAdocao()\n[UC-10 «include» UC-07]
+EM_PROCESSO_ADOCAO --> DISPONIVEL       : rejeitarAdocao() /\ndesistência do adotante\n[UC-10]
+EM_PROCESSO_ADOCAO --> ADOTADO          : concluirAdocao()\n(contrato assinado)
+ADOTADO         --> DISPONIVEL          : devolução do animal\n(falha no acompanhamento)
+
+RESGATADO          --> OBITO : óbito durante triagem
+EM_TRATAMENTO      --> OBITO : óbito clínico
+DISPONIVEL         --> OBITO : óbito antes da adoção
+EM_PROCESSO_ADOCAO --> OBITO : óbito antes da conclusão
+
+ADOTADO --> [*] : encerramento\ndo acompanhamento
+OBITO   --> [*]
+
+note right of EM_TRATAMENTO
+  O animal pode receber múltiplos
+  atendimentos antes do laudo
+  de liberação (auto-transição).
+end note
+
+note bottom of DISPONIVEL
+  Só animais em ``DISPONIVEL`` aparecem
+  na busca pública (UC-04) e podem
+  receber solicitações de adoção (UC-01).
+end note
+
 @enduml

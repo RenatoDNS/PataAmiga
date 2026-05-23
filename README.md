@@ -2,21 +2,9 @@
 
 > Plataforma web de gestão para ONGs de resgate e adoção de animais.
 
-<table>
-  <tr>
-    <td width="800px">
-      <div align="justify">
-        O <b>PataAmiga</b> é uma plataforma web desenvolvida para centralizar e otimizar a gestão de ONGs dedicadas ao resgate e adoção de animais. O sistema acompanha o ciclo de vida completo de cada animal — desde o resgate inicial, passando pelos cuidados veterinários, até a adoção responsável — integrando todos os atores envolvidos: adotantes, voluntários, veterinários, coordenadores e doadores em uma única solução.
-      </div>
-    </td>
-    <td>
-      <div align="center">
-        <!-- TODO: adicionar logo do PataAmiga -->
-        🐾
-      </div>
-    </td>
-  </tr>
-</table>
+<div align="justify">
+O <b>PataAmiga</b> é uma plataforma web desenvolvida para centralizar e otimizar a gestão de ONGs dedicadas ao resgate e adoção de animais. O sistema acompanha o ciclo de vida completo de cada animal — desde o resgate inicial, passando pelos cuidados veterinários, até a adoção responsável — integrando todos os atores envolvidos: adotantes, voluntários, veterinários, coordenadores e doadores em uma única solução.
+</div>
 
 ---
 
@@ -400,12 +388,35 @@ Fontes PlantUML:
 
 ### 3.6 Diagrama de Estados
 
-> Ciclo de vida de um animal dentro da plataforma, do resgate à adoção (`RESGATADO` → `EM_TRATAMENTO` → `DISPONIVEL` → `EM_PROCESSO_ADOCAO` → `ADOTADO` / `OBITO`).
+> Ciclo de vida de um animal dentro da plataforma, do resgate à adoção. Cada transição é acionada por uma operação de sistema ligada a um caso de uso da seção 2.2 — em particular, todo o eixo principal de mudança de status é coberto por **UC-07 Atualizar Status do Animal**, que aparece como **«include»** nos UCs 03, 09 e 10.
 
-<!-- TODO: inserir imagem -->
-| Estados do Animal |
+#### Resumo dos estados
+
+| Estado | Significado | Próximo(s) estado(s) típico(s) |
+|---|---|---|
+| `RESGATADO` | Animal recém-resgatado, aguardando triagem veterinária | `EM_TRATAMENTO`, `OBITO` |
+| `EM_TRATAMENTO` | Atendimentos veterinários em andamento (consultas, vacinas, cirurgias) | `EM_TRATAMENTO` (novo atendimento), `DISPONIVEL`, `OBITO` |
+| `DISPONIVEL` | Apto à adoção, visível na busca pública (UC-04) | `EM_PROCESSO_ADOCAO`, `OBITO` |
+| `EM_PROCESSO_ADOCAO` | Adoção aprovada, aguardando contrato e entrega | `ADOTADO`, `DISPONIVEL`, `OBITO` |
+| `ADOTADO` | Adoção concluída, acompanhamento pós-adoção ativo | `DISPONIVEL` (devolução), estado terminal |
+| `OBITO` | Animal veio a óbito — estado terminal | — |
+
+#### Principais transições
+
+| De → Para | Evento / Operação | Caso de Uso |
+|---|---|---|
+| `RESGATADO` → `EM_TRATAMENTO` | Primeiro `registrarAtendimento()` após resgate | UC-03 «include» UC-07 |
+| `EM_TRATAMENTO` → `EM_TRATAMENTO` | Novo atendimento (auto-transição) | UC-03 |
+| `EM_TRATAMENTO` → `DISPONIVEL` | `emitirLaudoLiberacao()` com `liberaParaAdocao = true` | UC-09 «include» UC-07 |
+| `DISPONIVEL` → `EM_PROCESSO_ADOCAO` | `aprovarAdocao()` pelo Coordenador | UC-10 «include» UC-07 |
+| `EM_PROCESSO_ADOCAO` → `ADOTADO` | `concluirAdocao()` (contrato assinado) | UC-10 |
+| `EM_PROCESSO_ADOCAO` → `DISPONIVEL` | Desistência do adotante ou rejeição | UC-10 |
+| `ADOTADO` → `DISPONIVEL` | Devolução do animal (falha no acompanhamento pós-adoção) | UC-06 |
+| qualquer → `OBITO` | Óbito clínico do animal | UC-03 |
+
+| ![Diagrama de Estados do Animal](docs/diagrams/png/16-estado-animal.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 16** — Diagrama de Estados: Ciclo de Vida do Animal |
 
 Fonte PlantUML: [`docs/diagrams/puml/16-estado-animal.puml`](docs/diagrams/puml/16-estado-animal.puml)
 
@@ -413,20 +424,111 @@ Fonte PlantUML: [`docs/diagrams/puml/16-estado-animal.puml`](docs/diagrams/puml/
 
 ## 4. Modelos de Dados
 
-> Esquema relacional do banco PostgreSQL e a estratégia de mapeamento objeto/relacional adotada (Hibernate/JPA).
+> Esquema relacional do banco PostgreSQL e a estratégia de mapeamento objeto/relacional adotada (Hibernate/JPA). O modelo lógico espelha o diagrama de classes da seção 3.3, preservando a **Abordagem C** para usuários: tabela `usuario` central e cinco tabelas de perfil opcionais 1:1.
 
 ### Diagrama Entidade-Relacionamento
 
-<!-- TODO: inserir imagem -->
-| Entidade-Relacionamento |
+#### Visão geral das tabelas
+
+| Tabela | Cardinalidade com `usuario` | Papel |
+|---|:---:|---|
+| `usuario` | — | Identidade central; dados pessoais e credenciais |
+| `perfil_adotante` | 1 ─ 0..1 | Dados específicos do papel Adotante |
+| `perfil_doador` | 1 ─ 0..1 | Dados específicos do papel Doador |
+| `perfil_voluntario` | 1 ─ 0..1 | Dados específicos do papel Voluntário |
+| `perfil_veterinario` | 1 ─ 0..1 | Dados específicos do papel Veterinário (CRMV, especialidade) |
+| `perfil_coordenador` | 1 ─ 0..1 | Dados específicos do papel Coordenador |
+| `animal` | — | Entidade central do negócio |
+| `registro_veterinario` | — | Prontuário; FK para `animal` e `perfil_veterinario` |
+| `adocao` | — | Processo de adoção; FKs para `animal`, `perfil_adotante` e `perfil_coordenador` |
+| `doacao` | — | Aporte financeiro; FK para `perfil_doador` |
+| `relatorio` | — | Saída agregada; FK para `perfil_coordenador` |
+
+> Nas cinco tabelas `perfil_*` a coluna `usuario_id` é **simultaneamente PK e FK** para `usuario(id)` — característica da Abordagem C que garante a cardinalidade 1:1 opcional sem coluna `tipo_perfil` discriminadora e sem herança no banco.
+
+| ![Diagrama Entidade-Relacionamento](docs/diagrams/png/17-entidade-relacionamento.png) |
 | :---: |
-| _Em desenvolvimento_ |
+| **Figura 17** — Diagrama Entidade-Relacionamento do PataAmiga (PostgreSQL) |
 
 Fonte PlantUML: [`docs/diagrams/puml/17-entidade-relacionamento.puml`](docs/diagrams/puml/17-entidade-relacionamento.puml)
 
 ### Estratégia de Mapeamento Objeto-Relacional
 
-> _Em desenvolvimento — descreverá como entidades JPA são mapeadas para tabelas (`@Entity`, `@Table`, `@Id`/`@GeneratedValue`, relacionamentos `@OneToMany` / `@ManyToOne`, estratégia de herança quando aplicável, e enums como `@Enumerated(EnumType.STRING)`)._
+O backend usa **Hibernate** como provider JPA. Cada classe do modelo de domínio (seção 3.3) é mapeada para uma tabela PostgreSQL conforme as convenções a seguir.
+
+#### Convenções gerais
+
+| Aspecto | Decisão |
+|---|---|
+| Nomes de tabelas e colunas | `snake_case` minúsculo (via `Hibernate.physical_naming_strategy = CamelCaseToUnderscoresNamingStrategy`) |
+| Chaves primárias | `@Id @GeneratedValue(strategy = GenerationType.IDENTITY)` mapeado para `BIGSERIAL` |
+| Enums | `@Enumerated(EnumType.STRING)` — preserva legibilidade no banco e segurança em refatorações |
+| Datas/horas | `LocalDate` → `DATE`, `LocalDateTime` → `TIMESTAMP` (JPA 3.1, sem `@Temporal`) |
+| Valores monetários | `BigDecimal` → `NUMERIC(12,2)` em `Doacao.valor` |
+| Texto longo | Campos como `Adocao.acompanhamentoPosAdocao`, `Animal.descricao` e `RegistroVeterinario.observacoes` usam `@Column(columnDefinition = "TEXT")` |
+| JSON estruturado | `Relatorio.dadosAgregados` mapeado como `JSONB` via `@JdbcTypeCode(SqlTypes.JSON)` (Hibernate 6) |
+| `equals` / `hashCode` | Baseados apenas no `id` (entidades JPA com identidade gerada) |
+| Versionamento | `@Version` em entidades editáveis com concorrência (`Animal`, `Adocao`) para locking otimista |
+
+#### Mapeamento da Abordagem C (Usuario + Perfis)
+
+Cada perfil é uma entidade independente cuja chave primária é **também a chave estrangeira** para `usuario`, materializando o relacionamento 1:1 opcional sem coluna nullable na tabela base.
+
+```java
+@Entity
+@Table(name = "usuario")
+public class Usuario {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true, length = 120)
+    private String email;
+
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true,
+              fetch = FetchType.LAZY)
+    private PerfilAdotante perfilAdotante;
+    // ... mesma anotação para os outros 4 perfis
+}
+
+@Entity
+@Table(name = "perfil_adotante")
+public class PerfilAdotante {
+    @Id
+    private Long id;          // mesmo valor de usuario.id
+
+    @MapsId
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
+}
+```
+
+- `@MapsId` informa ao Hibernate que a PK do `PerfilAdotante` é derivada da FK para `Usuario` — não há sequência separada.
+- O **lado proprietário** do relacionamento é o perfil (ele carrega `usuario_id`); o `Usuario` usa `mappedBy`.
+- `cascade = ALL` + `orphanRemoval = true` permitem criar/remover o perfil junto com o usuário quando apropriado.
+
+> **Por que não `@Inheritance`?** Uma hierarquia JPA (`SINGLE_TABLE`, `JOINED` ou `TABLE_PER_CLASS`) exigiria que cada usuário fosse exatamente **um** tipo de perfil. No PataAmiga uma mesma pessoa pode acumular qualquer combinação de papéis (ex.: voluntário que também adota e doa), o que invalida a herança e justifica a Abordagem C com composição.
+
+#### Mapeamento dos principais relacionamentos
+
+| Relacionamento (UML) | Anotações JPA | Coluna FK no banco |
+|---|---|---|
+| `Animal "1" → "0..*" RegistroVeterinario` | `@OneToMany(mappedBy = "animal", cascade = ALL, orphanRemoval = true)` em `Animal`; `@ManyToOne @JoinColumn(name = "animal_id")` em `RegistroVeterinario` | `registro_veterinario.animal_id` |
+| `PerfilVeterinario "1" → "0..*" RegistroVeterinario` | `@ManyToOne(fetch = LAZY) @JoinColumn(name = "veterinario_id")` em `RegistroVeterinario` | `registro_veterinario.veterinario_id` |
+| `Animal "1" → "0..*" Adocao` | `@OneToMany(mappedBy = "animal")` em `Animal`; `@ManyToOne @JoinColumn(name = "animal_id")` em `Adocao` | `adocao.animal_id` |
+| `PerfilAdotante "1" → "0..*" Adocao` | `@ManyToOne @JoinColumn(name = "adotante_id")` em `Adocao` | `adocao.adotante_id` |
+| `PerfilCoordenador "0..1" → "0..*" Adocao` | `@ManyToOne(optional = true) @JoinColumn(name = "coordenador_id")` em `Adocao` | `adocao.coordenador_id` (nullable) |
+| `PerfilDoador "1" → "0..*" Doacao` | `@ManyToOne @JoinColumn(name = "doador_id")` em `Doacao` | `doacao.doador_id` |
+| `PerfilCoordenador "1" → "0..*" Relatorio` | `@ManyToOne @JoinColumn(name = "coordenador_id")` em `Relatorio` | `relatorio.coordenador_id` |
+
+#### Estratégias de busca (`FetchType`) e cascata
+
+- **Default = `LAZY`** em todos os `@ManyToOne` e `@OneToOne` — coleções e referências só são carregadas sob demanda, evitando o N+1. Quando uma view precisa de joins, a camada `Service` usa `@EntityGraph` ou JPQL com `JOIN FETCH`.
+- **`CascadeType.ALL` + `orphanRemoval = true`** apenas onde a composição é exclusiva: `Usuario → Perfil*`, `Animal → RegistroVeterinario`. Nas demais relações usa-se `CascadeType.PERSIST` ou nenhuma cascata, evitando exclusões em cadeia indesejadas.
+
+#### Versionamento de schema
+
+Migrations versionadas com **Flyway** (`db/migration/V<ts>__<descricao>.sql`). O Hibernate roda em modo `ddl-auto=validate` em produção — o schema é construído exclusivamente pelas migrations, e a aplicação apenas valida na inicialização. Isso garante que o ER documentado nesta seção corresponde ao banco real.
 
 ---
 

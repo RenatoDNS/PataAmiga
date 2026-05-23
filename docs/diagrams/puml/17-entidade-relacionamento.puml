@@ -1,4 +1,184 @@
 @startuml 17-entidade-relacionamento
 ' PataAmiga — Diagrama Entidade-Relacionamento (seção 4)
-' TODO
+' Esquema relacional do PostgreSQL espelhando o Diagrama de Classes (09-classes.puml).
+' Aplica a "Abordagem C": tabela usuario base + 5 tabelas de perfil 1:1 opcionais (FK = PK).
+
+title Diagrama Entidade-Relacionamento — PataAmiga (PostgreSQL)
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam entity {
+    BackgroundColor #FDFDFD
+    BorderColor #555555
+    ArrowColor #555555
+}
+
+' ============================================================
+'  USUÁRIO BASE + PERFIS 1:1 (Abordagem C)
+' ============================================================
+
+entity usuario {
+    + id : BIGSERIAL  <<PK>>
+    --
+    nome : VARCHAR(120) NOT NULL
+    email : VARCHAR(120) NOT NULL <<UNIQUE>>
+    senha_hash : VARCHAR(255) NOT NULL
+    cpf : CHAR(11) NOT NULL <<UNIQUE>>
+    telefone : VARCHAR(20)
+    endereco : VARCHAR(255)
+    data_criacao : TIMESTAMP NOT NULL
+}
+
+entity perfil_adotante {
+    + usuario_id : BIGINT  <<PK,FK>>
+    --
+    ativo : BOOLEAN NOT NULL
+    data_ativacao : DATE NOT NULL
+    perfil_familiar : VARCHAR(255)
+    moradia_adequada : BOOLEAN
+    possui_outros_animais : BOOLEAN
+    formulario_interesse : TEXT
+}
+
+entity perfil_doador {
+    + usuario_id : BIGINT  <<PK,FK>>
+    --
+    ativo : BOOLEAN NOT NULL
+    data_ativacao : DATE NOT NULL
+    tipo_doador_preferido : VARCHAR(20)
+    frequencia_preferida : VARCHAR(30)
+    recebe_relatorios : BOOLEAN
+}
+
+entity perfil_voluntario {
+    + usuario_id : BIGINT  <<PK,FK>>
+    --
+    ativo : BOOLEAN NOT NULL
+    data_ativacao : DATE NOT NULL
+    disponibilidade_semanal : VARCHAR(120)
+    area_atuacao : VARCHAR(120)
+    data_ingresso : DATE
+}
+
+entity perfil_veterinario {
+    + usuario_id : BIGINT  <<PK,FK>>
+    --
+    ativo : BOOLEAN NOT NULL
+    data_ativacao : DATE NOT NULL
+    crmv : VARCHAR(20) NOT NULL <<UNIQUE>>
+    especialidade : VARCHAR(120)
+}
+
+entity perfil_coordenador {
+    + usuario_id : BIGINT  <<PK,FK>>
+    --
+    ativo : BOOLEAN NOT NULL
+    data_ativacao : DATE NOT NULL
+    cargo : VARCHAR(80)
+    permissoes_administrativas : VARCHAR(255)
+}
+
+' ============================================================
+'  ANIMAL E PRONTUÁRIO
+' ============================================================
+
+entity animal {
+    + id : BIGSERIAL  <<PK>>
+    --
+    nome : VARCHAR(80) NOT NULL
+    especie : VARCHAR(20) NOT NULL
+    raca : VARCHAR(80)
+    idade_estimada : SMALLINT
+    sexo : VARCHAR(10) NOT NULL
+    porte : VARCHAR(10) NOT NULL
+    status : VARCHAR(30) NOT NULL
+    foto : VARCHAR(255)
+    descricao : TEXT
+    data_resgate : DATE NOT NULL
+}
+
+entity registro_veterinario {
+    + id : BIGSERIAL  <<PK>>
+    --
+    # animal_id : BIGINT NOT NULL <<FK>>
+    # veterinario_id : BIGINT NOT NULL <<FK>>
+    data_atendimento : TIMESTAMP NOT NULL
+    tipo : VARCHAR(20) NOT NULL
+    descricao : TEXT NOT NULL
+    vacinas_aplicadas : VARCHAR(255)
+    procedimentos : TEXT
+    observacoes : TEXT
+    libera_para_adocao : BOOLEAN NOT NULL
+}
+
+' ============================================================
+'  ADOÇÃO
+' ============================================================
+
+entity adocao {
+    + id : BIGSERIAL  <<PK>>
+    --
+    # animal_id : BIGINT NOT NULL <<FK>>
+    # adotante_id : BIGINT NOT NULL <<FK>>
+    # coordenador_id : BIGINT NULL <<FK>>
+    data_solicitacao : TIMESTAMP NOT NULL
+    data_aprovacao : TIMESTAMP
+    data_conclusao : TIMESTAMP
+    status : VARCHAR(20) NOT NULL
+    motivo_rejeicao : VARCHAR(255)
+    contrato_pdf : VARCHAR(255)
+    acompanhamento_pos_adocao : TEXT
+}
+
+' ============================================================
+'  DOAÇÕES E RELATÓRIOS
+' ============================================================
+
+entity doacao {
+    + id : BIGSERIAL  <<PK>>
+    --
+    # doador_id : BIGINT NOT NULL <<FK>>
+    valor : NUMERIC(12,2) NOT NULL
+    tipo : VARCHAR(20) NOT NULL
+    data_doacao : TIMESTAMP NOT NULL
+    destinacao : VARCHAR(255)
+    comprovante : VARCHAR(255)
+    status_pagamento : VARCHAR(20) NOT NULL
+}
+
+entity relatorio {
+    + id : BIGSERIAL  <<PK>>
+    --
+    # coordenador_id : BIGINT NOT NULL <<FK>>
+    tipo : VARCHAR(20) NOT NULL
+    periodo_inicio : DATE NOT NULL
+    periodo_fim : DATE NOT NULL
+    dados_agregados : JSONB NOT NULL
+    gerado_em : TIMESTAMP NOT NULL
+}
+
+' ============================================================
+'  RELACIONAMENTOS
+' ============================================================
+
+' Usuario 1 ─ 0..1 Perfis (Abordagem C: PK do perfil = FK para usuario)
+usuario ||--o| perfil_adotante     : "possui"
+usuario ||--o| perfil_doador       : "possui"
+usuario ||--o| perfil_voluntario   : "possui"
+usuario ||--o| perfil_veterinario  : "possui"
+usuario ||--o| perfil_coordenador  : "possui"
+
+' Animal e Prontuário
+animal             ||--o{ registro_veterinario : "possui"
+perfil_veterinario ||--o{ registro_veterinario : "registra"
+
+' Adoção
+animal             ||--o{ adocao : "recebe solicitações"
+perfil_adotante    ||--o{ adocao : "solicita"
+perfil_coordenador |o--o{ adocao : "avalia"
+
+' Doações e Relatórios
+perfil_doador      ||--o{ doacao    : "realiza"
+perfil_coordenador ||--o{ relatorio : "emite"
+
 @enduml
