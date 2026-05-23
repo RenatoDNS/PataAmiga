@@ -1,0 +1,50 @@
+// PataAmiga — Diagrama de Comunicacao do UC-02 Registrar Animal Resgatado (secao 3.5)
+// Mesma colaboracao da sequencia 11, vista como rede de objetos numerados.
+// Render: dot -Tpng 14-com-registrar-animal.dot -o 14-com-registrar-animal.png
+
+digraph DiagramaComunicacao_UC02 {
+    rankdir=TB;
+    bgcolor="white";
+    labelloc="t";
+    fontname="Arial";
+    fontsize=14;
+    label="Diagrama de Comunicacao - UC-02 Registrar Animal Resgatado";
+    nodesep=1.2;
+    ranksep=1.2;
+
+    node [
+        shape=box,
+        color="black",
+        fontname="Arial",
+        fontsize=11,
+        margin="0.20,0.10"
+    ];
+
+    edge [
+        fontname="Arial",
+        fontsize=10,
+        color="black",
+        fontcolor="black",
+        dir=none
+    ];
+
+    vol      [label=<<U>:Voluntario</U>>];
+    spa      [label=<<U>:SPA_Angular</U>>];
+    jwt      [label=<<U>:JwtFilter</U>>];
+    animctrl [label=<<U>:AnimalController</U>>];
+    animsvc  [label=<<U>:AnimalService</U>>];
+    animrepo [label=<<U>:AnimalRepository</U>>];
+    vetrepo  [label=<<U>:RegistroVetRepository</U>>];
+    db       [label=<<U>:PostgreSQL</U>>];
+
+    { rank=same; animrepo; vetrepo; }
+
+    vol      -> spa      [label=<1: preencherCadastroAnimal(dados) &#8595;<BR/>16: protocolo + status=RESGATADO &#8593;>];
+    spa      -> jwt      [label=<2: POST /api/v1/animais &#8595;<BR/>15: response JSON &#8593;>];
+    jwt      -> animctrl [label=<3: criar(request) [token valido] &#8595;<BR/>14: 201 Created &#8593;>];
+    animctrl -> animsvc  [label=<4: registrarResgate(dados, idVoluntario) &#8595;<BR/>13: Animal &#8593;>];
+    animsvc  -> animrepo [label=<5: save(new Animal(RESGATADO)) &#8595;<BR/>8: Animal persistido &#8593;>];
+    animsvc  -> vetrepo  [label=<9: save(new RegistroVeterinario()) &#8595;<BR/>12: RegistroVeterinario &#8593;>];
+    animrepo -> db       [label=<6: INSERT animal &#8595;<BR/>7: id &#8593;>];
+    vetrepo  -> db       [label=<10: INSERT registro_vet (vazio) &#8595;<BR/>11: id &#8593;>];
+}

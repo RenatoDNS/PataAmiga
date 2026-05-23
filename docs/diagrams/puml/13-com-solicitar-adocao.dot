@@ -1,0 +1,50 @@
+// PataAmiga — Diagrama de Comunicacao do UC-01 Solicitar Adocao (secao 3.5)
+// Mesma colaboracao da sequencia 10, vista como rede de objetos numerados.
+// Render: dot -Tpng 13-com-solicitar-adocao.dot -o 13-com-solicitar-adocao.png
+
+digraph DiagramaComunicacao_UC01 {
+    rankdir=TB;
+    bgcolor="white";
+    labelloc="t";
+    fontname="Arial";
+    fontsize=14;
+    label="Diagrama de Comunicacao - UC-01 Solicitar Adocao";
+    nodesep=1.2;
+    ranksep=1.2;
+
+    node [
+        shape=box,
+        color="black",
+        fontname="Arial",
+        fontsize=11,
+        margin="0.20,0.10"
+    ];
+
+    edge [
+        fontname="Arial",
+        fontsize=10,
+        color="black",
+        fontcolor="black",
+        dir=none
+    ];
+
+    ado    [label=<<U>:Adotante</U>>];
+    spa    [label=<<U>:SPA_Angular</U>>];
+    jwt    [label=<<U>:JwtFilter</U>>];
+    ctrl   [label=<<U>:AdocaoController</U>>];
+    svc    [label=<<U>:AdocaoService</U>>];
+    arepo  [label=<<U>:AnimalRepository</U>>];
+    drepo  [label=<<U>:AdocaoRepository</U>>];
+    db     [label=<<U>:PostgreSQL</U>>];
+
+    { rank=same; arepo; drepo; }
+
+    ado   -> spa   [label=<1: preencherFormulario(idAnimal, dados) &#8595;<BR/>16: protocolo + status=EM_ANALISE &#8593;>];
+    spa   -> jwt   [label=<2: POST /api/v1/adocoes &#8595;<BR/>15: response JSON &#8593;>];
+    jwt   -> ctrl  [label=<3: criar(request) [token valido] &#8595;<BR/>14: 201 Created &#8593;>];
+    ctrl  -> svc   [label=<4: solicitar(idAdotante, idAnimal, formulario) &#8595;<BR/>13: AdocaoResponseDTO &#8593;>];
+    svc   -> arepo [label=<5: findById(idAnimal) &#8595;<BR/>8: Animal [status==DISPONIVEL] &#8593;>];
+    svc   -> drepo [label=<9: save(new Adocao(EM_ANALISE)) &#8595;<BR/>12: Adocao persistida &#8593;>];
+    arepo -> db    [label=<6: SELECT animal &#8595;<BR/>7: row &#8593;>];
+    drepo -> db    [label=<10: INSERT adocao &#8595;<BR/>11: id &#8593;>];
+}

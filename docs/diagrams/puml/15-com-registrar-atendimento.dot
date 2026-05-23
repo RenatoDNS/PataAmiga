@@ -1,0 +1,56 @@
+// PataAmiga — Diagrama de Comunicacao do UC-03 Registrar Atendimento Veterinario (secao 3.5)
+// Mesma colaboracao da sequencia 12, vista como rede de objetos numerados.
+// Cobre a operacao principal (registrarAtendimento) incluindo a transicao de status
+// «include» UC-07 disparada por VetSvc -> AnimSvc -> AnimRepo -> DB.
+// Render: dot -Tpng 15-com-registrar-atendimento.dot -o 15-com-registrar-atendimento.png
+
+digraph DiagramaComunicacao_UC03 {
+    rankdir=TB;
+    bgcolor="white";
+    labelloc="t";
+    fontname="Arial";
+    fontsize=14;
+    label="Diagrama de Comunicacao - UC-03 Registrar Atendimento Veterinario";
+    nodesep=1.2;
+    ranksep=1.2;
+
+    node [
+        shape=box,
+        color="black",
+        fontname="Arial",
+        fontsize=11,
+        margin="0.20,0.10"
+    ];
+
+    edge [
+        fontname="Arial",
+        fontsize=10,
+        color="black",
+        fontcolor="black",
+        dir=none
+    ];
+
+    vet      [label=<<U>:Veterinario</U>>];
+    spa      [label=<<U>:SPA_Angular</U>>];
+    jwt      [label=<<U>:JwtFilter</U>>];
+    vetctrl  [label=<<U>:RegistroVetController</U>>];
+    vetsvc   [label=<<U>:RegistroVetService</U>>];
+    animsvc  [label=<<U>:AnimalService</U>>];
+    animrepo [label=<<U>:AnimalRepository</U>>];
+    vetrepo  [label=<<U>:RegistroVetRepository</U>>];
+    db       [label=<<U>:PostgreSQL</U>>];
+
+    { rank=same; vetsvc; animsvc; }
+    { rank=same; animrepo; vetrepo; }
+
+    vet      -> spa      [label=<1: preencherAtendimento(dados) &#8595;<BR/>22: idAtendimento + statusAnimal=EM_TRATAMENTO &#8593;>];
+    spa      -> jwt      [label=<2: POST /api/v1/registros-vet &#8595;<BR/>21: response JSON &#8593;>];
+    jwt      -> vetctrl  [label=<3: criar(request) [token valido] &#8595;<BR/>20: 201 Created &#8593;>];
+    vetctrl  -> vetsvc   [label=<4: registrar(idAnimal, dados, idVeterinario) &#8595;<BR/>19: RegistroVeterinario &#8593;>];
+    vetsvc   -> animrepo [label=<5: findById(idAnimal) &#8595;<BR/>8: Animal &#8593;>];
+    vetsvc   -> vetrepo  [label=<9: save(new RegistroVeterinario()) &#8595;<BR/>12: RegistroVeterinario &#8593;>];
+    vetsvc   -> animsvc  [label=<13: atualizarStatus(idAnimal, EM_TRATAMENTO) [include UC-07] &#8595;<BR/>18: Animal atualizado &#8593;>];
+    animsvc  -> animrepo [label=<14: save(animal.status) &#8595;<BR/>17: Animal &#8593;>];
+    animrepo -> db       [label=<6: SELECT animal &#8595;<BR/>7: row &#8593;<BR/>15: UPDATE animal SET status='EM_TRATAMENTO' &#8595;<BR/>16: ok &#8593;>];
+    vetrepo  -> db       [label=<10: INSERT registro_vet &#8595;<BR/>11: id &#8593;>];
+}
