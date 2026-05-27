@@ -1,0 +1,98 @@
+@startuml 23-seq-realizar-doacao
+' PataAmiga — Sequência de Realização do UC-13 Realizar Doação (seção 3.4)
+' Visão caixa-branca: Doador ↔ SPA ↔ JwtFilter ↔ DoacaoController ↔ DoacaoService ↔ DoacaoRepository ↔ DB
+' Integra Gateway de Pagamento (processa o pagamento) e Serviço de E-mail (envia recibo) — ambos externos.
+
+title Sequência de Realização — UC-13 Realizar Doação (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Doador" as D
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":DoacaoController" as DoaCtrl
+participant ":DoacaoService" as DoaSvc
+participant ":DoacaoRepository" as DoaRepo
+database "PostgreSQL" as DB
+participant ":Gateway de Pagamento" as PAY #EDE7F6
+participant ":Serviço de E-mail" as MAIL #EDE7F6
+
+== Realizar doação ==
+
+D -> SPA : realizarDoacao(valor, tipo, metodoPagamento)
+SPA -> JWT : POST /api/v1/doacoes\n{valor, tipo, metodo}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> DoaCtrl : criar(DoacaoRequestDTO)
+activate DoaCtrl
+DoaCtrl -> DoaSvc : registrar(idDoador, valor, tipo, metodo)
+activate DoaSvc
+DoaSvc -> DoaRepo : save(new Doacao(statusPagamento=PENDENTE))
+activate DoaRepo
+DoaRepo -> DB : INSERT INTO doacao(...) VALUES(...)
+DB --> DoaRepo : id
+DoaRepo --> DoaSvc : Doacao
+deactivate DoaRepo
+DoaSvc -> PAY : processarPagamento(valor, metodo)
+activate PAY
+PAY --> DoaSvc : {transacaoId, status}
+deactivate PAY
+
+alt Pagamento aprovado
+  note right of DoaSvc
+    doacao.confirmarPagamento():
+    statusPagamento=CONFIRMADO.
+  end note
+  DoaSvc -> DoaRepo : save(doacao)
+  activate DoaRepo
+  DoaRepo -> DB : UPDATE doacao SET status_pagamento='CONFIRMADO', comprovante=? WHERE id=?
+  DB --> DoaRepo : ok
+  DoaRepo --> DoaSvc : Doacao
+  deactivate DoaRepo
+  DoaSvc -> DoaSvc : doacao.emitirRecibo() → comprovante
+  DoaSvc -> MAIL : enviarRecibo(doador.email, comprovante)
+  activate MAIL
+  MAIL --> DoaSvc : 202 Accepted
+  deactivate MAIL
+  DoaSvc --> DoaCtrl : Doacao
+  deactivate DoaSvc
+  DoaCtrl --> JWT : DoacaoResponseDTO\n{idDoacao, status=CONFIRMADO, recibo}
+  deactivate DoaCtrl
+  JWT --> SPA : 201 Created + JSON
+  deactivate JWT
+  SPA --> D : doação confirmada + recibo
+else Pagamento recusado
+  DoaSvc -> DoaRepo : save(doacao.statusPagamento=RECUSADO)
+  activate DoaRepo
+  DoaRepo -> DB : UPDATE doacao SET status_pagamento='RECUSADO' WHERE id=?
+  DB --> DoaRepo : ok
+  DoaRepo --> DoaSvc : Doacao
+  deactivate DoaRepo
+  DoaSvc --> DoaCtrl : Doacao
+  deactivate DoaSvc
+  DoaCtrl --> JWT : 402 Payment Required\n{status=RECUSADO}
+  deactivate DoaCtrl
+  JWT --> SPA : 402 + JSON
+  deactivate JWT
+  SPA --> D : pagamento recusado
+end
+
+@enduml

@@ -1,0 +1,82 @@
+@startuml 18-seq-agendar-atendimento
+' PataAmiga — Sequência de Realização do UC-08 Agendar Atendimento Veterinário (seção 3.4)
+' Visão caixa-branca: Voluntário ↔ SPA ↔ JwtFilter ↔ RegistroVetController ↔ RegistroVetService ↔ Repos ↔ DB
+' Notifica o veterinário via Serviço de E-mail (externo).
+
+title Sequência de Realização — UC-08 Agendar Atendimento Veterinário (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Voluntário" as V
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":RegistroVetController" as VetCtrl
+participant ":RegistroVetService" as VetSvc
+participant ":AnimalRepository" as AnimRepo
+participant ":RegistroVetRepository" as VetRepo
+database "PostgreSQL" as DB
+participant ":Serviço de E-mail" as MAIL #EDE7F6
+
+note over V, MAIL
+  O modelo de domínio não possui entidade "Agendamento": o agendamento
+  é materializado como um RegistroVeterinario programado (tipo=CONSULTA,
+  dataAtendimento futura), e o veterinário é notificado por e-mail.
+end note
+
+== Agendar atendimento ==
+
+V -> SPA : agendarAtendimento(idAnimal, dataHora, tipo, idVeterinario)
+SPA -> JWT : POST /api/v1/animais/{id}/agendamentos\n{dataHora, tipo, idVeterinario}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> VetCtrl : agendar(AgendamentoRequestDTO)
+activate VetCtrl
+VetCtrl -> VetSvc : agendar(idAnimal, dataHora, tipo, idVeterinario)
+activate VetSvc
+VetSvc -> AnimRepo : findById(idAnimal)
+activate AnimRepo
+AnimRepo -> DB : SELECT * FROM animal WHERE id=?
+DB --> AnimRepo : row
+AnimRepo --> VetSvc : Animal
+deactivate AnimRepo
+note right of VetSvc
+  Valida que dataHora é futura e que o
+  veterinário existe. Cria registro programado.
+end note
+VetSvc -> VetRepo : save(new RegistroVeterinario(CONSULTA, dataHora, animal, veterinario))
+activate VetRepo
+VetRepo -> DB : INSERT INTO registro_veterinario(...) VALUES(...)
+DB --> VetRepo : id
+VetRepo --> VetSvc : RegistroVeterinario
+deactivate VetRepo
+VetSvc -> MAIL : enviarNotificacao(veterinario.email, "Novo atendimento agendado")
+activate MAIL
+MAIL --> VetSvc : 202 Accepted
+deactivate MAIL
+VetSvc --> VetCtrl : RegistroVeterinario
+deactivate VetSvc
+VetCtrl --> JWT : AgendamentoResponseDTO\n{idAgendamento, dataHora}
+deactivate VetCtrl
+JWT --> SPA : 201 Created + JSON
+deactivate JWT
+SPA --> V : agendamento confirmado
+
+@enduml

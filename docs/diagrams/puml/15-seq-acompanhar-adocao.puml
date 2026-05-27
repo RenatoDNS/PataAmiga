@@ -1,0 +1,87 @@
+@startuml 15-seq-acompanhar-adocao
+' PataAmiga — Sequência de Realização do UC-05 Acompanhar Processo de Adoção (seção 3.4)
+' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ AdocaoController ↔ AdocaoService ↔ Repository ↔ DB
+
+title Sequência de Realização — UC-05 Acompanhar Processo de Adoção (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Adotante" as A
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AdocaoController" as AdoCtrl
+participant ":AdocaoService" as AdoSvc
+participant ":AdocaoRepository" as AdoRepo
+database "PostgreSQL" as DB
+
+== Listar minhas solicitações ==
+
+A -> SPA : abrirMinhasAdocoes()
+SPA -> JWT : GET /api/v1/adocoes?adotante=me
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AdoCtrl : listarDoAdotante()
+activate AdoCtrl
+AdoCtrl -> AdoSvc : listarPorAdotante(idAdotante)
+activate AdoSvc
+AdoSvc -> AdoRepo : findByAdotanteIdOrderByDataSolicitacaoDesc(idAdotante)
+activate AdoRepo
+AdoRepo -> DB : SELECT * FROM adocao WHERE adotante_id=? ORDER BY data_solicitacao DESC
+DB --> AdoRepo : rows
+AdoRepo --> AdoSvc : List<Adocao>
+deactivate AdoRepo
+AdoSvc --> AdoCtrl : List<Adocao>
+deactivate AdoSvc
+AdoCtrl --> JWT : List<AdocaoResponseDTO>\n{protocolo, status, animal, datas}
+deactivate AdoCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> A : exibir lista com o status de cada processo
+
+== Detalhar um processo ==
+
+A -> SPA : abrirProcesso(idAdocao)
+SPA -> JWT : GET /api/v1/adocoes/{id}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AdoCtrl : detalhar(id)
+activate AdoCtrl
+AdoCtrl -> AdoSvc : buscarPorId(id)
+activate AdoSvc
+AdoSvc -> AdoRepo : findById(id)
+activate AdoRepo
+AdoRepo -> DB : SELECT * FROM adocao WHERE id=?
+DB --> AdoRepo : row
+AdoRepo --> AdoSvc : Adocao
+deactivate AdoRepo
+note right of AdoSvc
+  Valida que a Adocao pertence ao
+  Adotante autenticado (autorização).
+end note
+AdoSvc --> AdoCtrl : Adocao
+deactivate AdoSvc
+AdoCtrl --> JWT : AdocaoDetalhadaResponseDTO\n{etapas: EM_ANALISE → EM_ENTREVISTA → APROVADA → CONCLUIDA}
+deactivate AdoCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> A : exibir linha do tempo do processo
+
+@enduml

@@ -335,7 +335,15 @@ Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-cla
 
 ### 3.4 Diagramas de Sequência
 
-> Realização interna (**caixa-branca**) dos três casos de uso escolhidos. Cada diagrama atravessa as camadas da arquitetura — `SPA Angular` → `JwtFilter` → `Controller` → `Service` → `Repository` → `PostgreSQL` — refinando as operações de sistema que aparecem nos SSDs da seção 2.3 em chamadas internas entre componentes (mesmos componentes do C4 Nível 3, Figura 7).
+> Realização interna (**caixa-branca**) do sistema. Esta seção traz **um diagrama de sequência para cada um dos 14 casos de uso** (Figuras 11–24) e **um Diagrama de Sequência do Sistema** em forma de panorama ponta-a-ponta (Figura 10). Cada diagrama atravessa as camadas da arquitetura — `SPA Angular` → `JwtFilter` → `Controller` → `Service` → `Repository` → `PostgreSQL` — refinando as operações de sistema dos SSDs (seção 2.3) em chamadas internas entre os componentes do C4 Nível 3 (Figura 7).
+
+#### Diagrama de Sequência do Sistema (Panorama)
+
+> Visão consolidada do sistema: o ciclo de vida do animal de ponta a ponta — resgate → tratamento → liberação → adoção → pós-adoção — mais o fluxo paralelo de doações, integrando os **5 atores** e as camadas. Cada fase numerada refina-se no diagrama de sequência do respectivo caso de uso (Figuras 11–24); por legibilidade, as camadas aparecem como lifelines genéricas (`Controller`/`Service`/`Repository`) e os componentes concretos de cada fase constam nas notas.
+
+| ![Sequência do Sistema — Panorama](docs/diagrams/png/10-seq-sistema-panorama.png) |
+| :---: |
+| **Figura 10** — Diagrama de Sequência do Sistema (Panorama Ponta-a-Ponta) |
 
 #### Componentes participantes por caso de uso
 
@@ -344,21 +352,59 @@ Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-cla
 | **UC-01** Solicitar Adoção | `AnimalController`, `AdocaoController` | `AnimalService`, `AdocaoService` | `AnimalRepository`, `AdocaoRepository` |
 | **UC-02** Registrar Animal Resgatado | `AnimalController` | `AnimalService` | `AnimalRepository`, `RegistroVetRepository` |
 | **UC-03** Registrar Atendimento Veterinário | `AnimalController`, `RegistroVetController` | `AnimalService`, `RegistroVetService` | `AnimalRepository`, `RegistroVetRepository` |
+| **UC-04** Buscar Animal Disponível | `AnimalController` | `AnimalService` | `AnimalRepository` |
+| **UC-05** Acompanhar Processo de Adoção | `AdocaoController` | `AdocaoService` | `AdocaoRepository` |
+| **UC-06** Registrar Pós-Adoção | `AdocaoController` | `AdocaoService`, `AnimalService` | `AdocaoRepository`, `AnimalRepository` |
+| **UC-07** Atualizar Status do Animal | `AnimalController` | `AnimalService` | `AnimalRepository` |
+| **UC-08** Agendar Atendimento Veterinário | `RegistroVetController` | `RegistroVetService` | `AnimalRepository`, `RegistroVetRepository` |
+| **UC-09** Emitir Laudo de Liberação | `RegistroVetController` | `RegistroVetService`, `AnimalService` | `AnimalRepository`, `RegistroVetRepository` |
+| **UC-10** Aprovar/Rejeitar Adoção | `AdocaoController` | `AdocaoService`, `AnimalService` | `AdocaoRepository`, `AnimalRepository` |
+| **UC-11** Gerenciar Voluntários | `UsuarioController` | `UsuarioService` | `UsuarioRepository` |
+| **UC-12** Emitir Relatórios Gerenciais | `DoacaoController` | `DoacaoService` | `AdocaoRepository`, `DoacaoRepository`, `RelatorioRepository` |
+| **UC-13** Realizar Doação | `DoacaoController` | `DoacaoService` | `DoacaoRepository` |
+| **UC-14** Acompanhar Destinação das Doações | `DoacaoController` | `DoacaoService` | `DoacaoRepository` |
 
-| UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
+> **Sistemas externos:** o **Serviço de E-mail (SMTP)** é acionado em UC-08, UC-10 e UC-13; o **Gateway de Pagamento** é acionado em UC-13. Ambos aparecem destacados (lilás) nos diagramas correspondentes.
+
+#### Realização por caso de uso
+
+| | | |
 | :---: | :---: | :---: |
-| ![Sequência UC-01](docs/diagrams/png/10-seq-solicitar-adocao.png) | ![Sequência UC-02](docs/diagrams/png/11-seq-registrar-animal.png) | ![Sequência UC-03](docs/diagrams/png/12-seq-registrar-atendimento.png) |
-| **Figura 10** — Realização UC-01 Solicitar Adoção | **Figura 11** — Realização UC-02 Registrar Animal | **Figura 12** — Realização UC-03 Registrar Atendimento |
+| ![UC-01](docs/diagrams/png/11-seq-solicitar-adocao.png) | ![UC-02](docs/diagrams/png/12-seq-registrar-animal.png) | ![UC-03](docs/diagrams/png/13-seq-registrar-atendimento.png) |
+| **Figura 11** — UC-01 Solicitar Adoção | **Figura 12** — UC-02 Registrar Animal Resgatado | **Figura 13** — UC-03 Registrar Atendimento Veterinário |
+| ![UC-04](docs/diagrams/png/14-seq-buscar-animal.png) | ![UC-05](docs/diagrams/png/15-seq-acompanhar-adocao.png) | ![UC-06](docs/diagrams/png/16-seq-registrar-pos-adocao.png) |
+| **Figura 14** — UC-04 Buscar Animal Disponível | **Figura 15** — UC-05 Acompanhar Processo de Adoção | **Figura 16** — UC-06 Registrar Pós-Adoção |
+| ![UC-07](docs/diagrams/png/17-seq-atualizar-status.png) | ![UC-08](docs/diagrams/png/18-seq-agendar-atendimento.png) | ![UC-09](docs/diagrams/png/19-seq-emitir-laudo.png) |
+| **Figura 17** — UC-07 Atualizar Status do Animal | **Figura 18** — UC-08 Agendar Atendimento Veterinário | **Figura 19** — UC-09 Emitir Laudo de Liberação |
+| ![UC-10](docs/diagrams/png/20-seq-aprovar-rejeitar-adocao.png) | ![UC-11](docs/diagrams/png/21-seq-gerenciar-voluntarios.png) | ![UC-12](docs/diagrams/png/22-seq-emitir-relatorios.png) |
+| **Figura 20** — UC-10 Aprovar/Rejeitar Adoção | **Figura 21** — UC-11 Gerenciar Voluntários | **Figura 22** — UC-12 Emitir Relatórios Gerenciais |
+| ![UC-13](docs/diagrams/png/23-seq-realizar-doacao.png) | ![UC-14](docs/diagrams/png/24-seq-acompanhar-destinacao.png) | |
+| **Figura 23** — UC-13 Realizar Doação | **Figura 24** — UC-14 Acompanhar Destinação das Doações | |
 
 **Observações de modelagem:**
-- A autenticação é representada pelo passo `validarToken()` em `JwtFilter`, exigido em toda requisição autenticada.
-- O UC-03 ilustra explicitamente o relacionamento **«include» UC-07** Atualizar Status do Animal — `RegistroVetService` delega a `AnimalService.atualizarStatus(...)` após registrar o atendimento.
-- Validações de regra de negócio (ex.: `Animal.status == DISPONIVEL` antes de criar `Adocao`) aparecem como auto-mensagens ou `note right of` no respectivo `Service`.
+- A autenticação é representada pelo passo `validarToken()` em `JwtFilter`, exigido em toda requisição autenticada (em UC-04, busca pública, o token é opcional — rota `permitAll`).
+- **UC-07 Atualizar Status do Animal** concentra toda transição de `StatusAnimal` e aparece como **«include»** em **UC-03** (`RESGATADO → EM_TRATAMENTO`), **UC-09** (`EM_TRATAMENTO → DISPONIVEL`) e **UC-10** (`DISPONIVEL → EM_PROCESSO_ADOCAO → ADOTADO`). Nesses casos o `Service` de origem delega a `AnimalService.atualizarStatus(...)`.
+- Validações de regra de negócio (ex.: `Animal.status == DISPONIVEL` antes de criar `Adocao`; laudo apenas com `status == EM_TRATAMENTO`) aparecem como auto-mensagens ou `note right of` no respectivo `Service`.
+- **UC-08** é materializado como um `RegistroVeterinario` programado (o modelo de domínio não possui entidade `Agendamento`), notificando o veterinário por e-mail.
+- **UC-12** e **UC-14** residem em `DoacaoController`/`DoacaoService`, conforme o C4 Nível 3 (Figura 7), que atribui a esse componente os "relatórios de impacto"; o `RelatorioRepository` integra o componente "Repositories".
+- O **panorama (Figura 10)** apresenta lifelines genéricas por legibilidade — os componentes concretos de cada fase estão nas notas, alinhados às Figuras 11–24.
 
 Fontes PlantUML:
-- [`docs/diagrams/puml/10-seq-solicitar-adocao.puml`](docs/diagrams/puml/10-seq-solicitar-adocao.puml)
-- [`docs/diagrams/puml/11-seq-registrar-animal.puml`](docs/diagrams/puml/11-seq-registrar-animal.puml)
-- [`docs/diagrams/puml/12-seq-registrar-atendimento.puml`](docs/diagrams/puml/12-seq-registrar-atendimento.puml)
+- [`docs/diagrams/puml/10-seq-sistema-panorama.puml`](docs/diagrams/puml/10-seq-sistema-panorama.puml)
+- [`docs/diagrams/puml/11-seq-solicitar-adocao.puml`](docs/diagrams/puml/11-seq-solicitar-adocao.puml)
+- [`docs/diagrams/puml/12-seq-registrar-animal.puml`](docs/diagrams/puml/12-seq-registrar-animal.puml)
+- [`docs/diagrams/puml/13-seq-registrar-atendimento.puml`](docs/diagrams/puml/13-seq-registrar-atendimento.puml)
+- [`docs/diagrams/puml/14-seq-buscar-animal.puml`](docs/diagrams/puml/14-seq-buscar-animal.puml)
+- [`docs/diagrams/puml/15-seq-acompanhar-adocao.puml`](docs/diagrams/puml/15-seq-acompanhar-adocao.puml)
+- [`docs/diagrams/puml/16-seq-registrar-pos-adocao.puml`](docs/diagrams/puml/16-seq-registrar-pos-adocao.puml)
+- [`docs/diagrams/puml/17-seq-atualizar-status.puml`](docs/diagrams/puml/17-seq-atualizar-status.puml)
+- [`docs/diagrams/puml/18-seq-agendar-atendimento.puml`](docs/diagrams/puml/18-seq-agendar-atendimento.puml)
+- [`docs/diagrams/puml/19-seq-emitir-laudo.puml`](docs/diagrams/puml/19-seq-emitir-laudo.puml)
+- [`docs/diagrams/puml/20-seq-aprovar-rejeitar-adocao.puml`](docs/diagrams/puml/20-seq-aprovar-rejeitar-adocao.puml)
+- [`docs/diagrams/puml/21-seq-gerenciar-voluntarios.puml`](docs/diagrams/puml/21-seq-gerenciar-voluntarios.puml)
+- [`docs/diagrams/puml/22-seq-emitir-relatorios.puml`](docs/diagrams/puml/22-seq-emitir-relatorios.puml)
+- [`docs/diagrams/puml/23-seq-realizar-doacao.puml`](docs/diagrams/puml/23-seq-realizar-doacao.puml)
+- [`docs/diagrams/puml/24-seq-acompanhar-destinacao.puml`](docs/diagrams/puml/24-seq-acompanhar-destinacao.puml)
 
 ---
 
@@ -374,15 +420,15 @@ Fontes PlantUML:
 
 | UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
 | :---: | :---: | :---: |
-| ![Comunicação UC-01](docs/diagrams/png/13-com-solicitar-adocao.png) | ![Comunicação UC-02](docs/diagrams/png/14-com-registrar-animal.png) | ![Comunicação UC-03](docs/diagrams/png/15-com-registrar-atendimento.png) |
-| **Figura 13** — Comunicação UC-01 Solicitar Adoção | **Figura 14** — Comunicação UC-02 Registrar Animal | **Figura 15** — Comunicação UC-03 Registrar Atendimento |
+| ![Comunicação UC-01](docs/diagrams/png/25-com-solicitar-adocao.png) | ![Comunicação UC-02](docs/diagrams/png/26-com-registrar-animal.png) | ![Comunicação UC-03](docs/diagrams/png/27-com-registrar-atendimento.png) |
+| **Figura 25** — Comunicação UC-01 Solicitar Adoção | **Figura 26** — Comunicação UC-02 Registrar Animal | **Figura 27** — Comunicação UC-03 Registrar Atendimento |
 
-Cada par de objetos é conectado por uma **aresta sem direção** que carrega todas as mensagens trocadas entre eles — o sentido de cada mensagem é indicado pelos símbolos ↓ (direção da aresta declarada) e ↑ (sentido inverso), conforme o padrão UML. Os repositórios `AnimalRepository` e `RegistroVetRepository` aparecem lado a lado para refletir que ambos colaboram diretamente com o `PostgreSQL`. Para o UC-03, o diagrama modela apenas a operação principal (`registrarAtendimento`) incluindo a transição **«include» UC-07** (`VetSvc → AnimSvc → AnimRepo → DB`) — o fluxo alternativo de emissão de laudo é coberto no diagrama de sequência (Figura 12).
+Cada par de objetos é conectado por uma **aresta sem direção** que carrega todas as mensagens trocadas entre eles — o sentido de cada mensagem é indicado pelos símbolos ↓ (direção da aresta declarada) e ↑ (sentido inverso), conforme o padrão UML. Os repositórios `AnimalRepository` e `RegistroVetRepository` aparecem lado a lado para refletir que ambos colaboram diretamente com o `PostgreSQL`. Para o UC-03, o diagrama modela apenas a operação principal (`registrarAtendimento`) incluindo a transição **«include» UC-07** (`VetSvc → AnimSvc → AnimRepo → DB`) — o fluxo de emissão de laudo é coberto em diagrama próprio, UC-09 (Figura 19).
 
 Fontes Graphviz (`.dot`):
-- [`docs/diagrams/puml/13-com-solicitar-adocao.dot`](docs/diagrams/puml/13-com-solicitar-adocao.dot)
-- [`docs/diagrams/puml/14-com-registrar-animal.dot`](docs/diagrams/puml/14-com-registrar-animal.dot)
-- [`docs/diagrams/puml/15-com-registrar-atendimento.dot`](docs/diagrams/puml/15-com-registrar-atendimento.dot)
+- [`docs/diagrams/puml/25-com-solicitar-adocao.dot`](docs/diagrams/puml/25-com-solicitar-adocao.dot)
+- [`docs/diagrams/puml/26-com-registrar-animal.dot`](docs/diagrams/puml/26-com-registrar-animal.dot)
+- [`docs/diagrams/puml/27-com-registrar-atendimento.dot`](docs/diagrams/puml/27-com-registrar-atendimento.dot)
 
 ---
 
@@ -414,11 +460,11 @@ Fontes Graphviz (`.dot`):
 | `ADOTADO` → `DISPONIVEL` | Devolução do animal (falha no acompanhamento pós-adoção) | UC-06 |
 | qualquer → `OBITO` | Óbito clínico do animal | UC-03 |
 
-| ![Diagrama de Estados do Animal](docs/diagrams/png/16-estado-animal.png) |
+| ![Diagrama de Estados do Animal](docs/diagrams/png/28-estado-animal.png) |
 | :---: |
-| **Figura 16** — Diagrama de Estados: Ciclo de Vida do Animal |
+| **Figura 28** — Diagrama de Estados: Ciclo de Vida do Animal |
 
-Fonte PlantUML: [`docs/diagrams/puml/16-estado-animal.puml`](docs/diagrams/puml/16-estado-animal.puml)
+Fonte PlantUML: [`docs/diagrams/puml/28-estado-animal.puml`](docs/diagrams/puml/28-estado-animal.puml)
 
 ---
 
@@ -446,11 +492,11 @@ Fonte PlantUML: [`docs/diagrams/puml/16-estado-animal.puml`](docs/diagrams/puml/
 
 > Nas cinco tabelas `perfil_*` a coluna `usuario_id` é **simultaneamente PK e FK** para `usuario(id)` — característica da Abordagem C que garante a cardinalidade 1:1 opcional sem coluna `tipo_perfil` discriminadora e sem herança no banco.
 
-| ![Diagrama Entidade-Relacionamento](docs/diagrams/png/17-entidade-relacionamento.png) |
+| ![Diagrama Entidade-Relacionamento](docs/diagrams/png/29-entidade-relacionamento.png) |
 | :---: |
-| **Figura 17** — Diagrama Entidade-Relacionamento do PataAmiga (PostgreSQL) |
+| **Figura 29** — Diagrama Entidade-Relacionamento do PataAmiga (PostgreSQL) |
 
-Fonte PlantUML: [`docs/diagrams/puml/17-entidade-relacionamento.puml`](docs/diagrams/puml/17-entidade-relacionamento.puml)
+Fonte PlantUML: [`docs/diagrams/puml/29-entidade-relacionamento.puml`](docs/diagrams/puml/29-entidade-relacionamento.puml)
 
 ### Estratégia de Mapeamento Objeto-Relacional
 
@@ -583,7 +629,7 @@ PataAmiga/
 │   └── workflows/              # CI/CD com GitHub Actions
 ├── docs/
 │   └── diagrams/
-│       ├── puml/               # Fontes dos diagramas (14 PlantUML + 3 Graphviz `.dot`)
+│       ├── puml/               # Fontes dos diagramas (26 PlantUML + 3 Graphviz `.dot`)
 │       └── png/                # Imagens geradas dos diagramas
 ├── backend/                    # API Spring Boot (Java 21)
 │   └── src/main/java/

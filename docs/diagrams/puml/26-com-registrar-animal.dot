@@ -1,6 +1,6 @@
 // PataAmiga — Diagrama de Comunicacao do UC-02 Registrar Animal Resgatado (secao 3.5)
-// Mesma colaboracao da sequencia 11, vista como rede de objetos numerados.
-// Render: dot -Tpng 14-com-registrar-animal.dot -o 14-com-registrar-animal.png
+// Mesma colaboracao da sequencia 12, vista como rede de objetos numerados.
+// Render: dot -Tpng 26-com-registrar-animal.dot -o 26-com-registrar-animal.png
 
 digraph DiagramaComunicacao_UC02 {
     rankdir=TB;

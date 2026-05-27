@@ -1,0 +1,89 @@
+@startuml 22-seq-emitir-relatorios
+' PataAmiga — Sequência de Realização do UC-12 Emitir Relatórios Gerenciais (seção 3.4)
+' Visão caixa-branca: Coordenador ↔ SPA ↔ JwtFilter ↔ DoacaoController ↔ DoacaoService ↔ (vários Repositories) ↔ DB
+' Conforme o C4 (Fig 7), a geração de relatórios reside no componente de Doações/Relatórios.
+
+title Sequência de Realização — UC-12 Emitir Relatórios Gerenciais (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Coordenador" as C
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":DoacaoController" as DoaCtrl
+participant ":DoacaoService" as DoaSvc
+participant ":AdocaoRepository" as AdoRepo
+participant ":DoacaoRepository" as DoaRepo
+participant ":RelatorioRepository" as RelRepo
+database "PostgreSQL" as DB
+
+note over C, DB
+  Conforme o C4 Nível 3 (Fig 7), a geração de relatórios reside no
+  componente de Doações/Relatórios (DoacaoController/DoacaoService).
+  O RelatorioRepository integra o componente "Repositories".
+end note
+
+== Gerar relatório gerencial ==
+
+C -> SPA : gerarRelatorio(tipo, periodoInicio, periodoFim)
+SPA -> JWT : GET /api/v1/relatorios?tipo=ADOCOES&inicio=...&fim=...
+activate JWT
+JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+JWT -> DoaCtrl : gerarRelatorio(RelatorioRequestDTO)
+activate DoaCtrl
+DoaCtrl -> DoaSvc : gerarRelatorio(tipo, periodo, idCoordenador)
+activate DoaSvc
+note right of DoaSvc
+  Agrega dados conforme o tipo
+  (ANIMAIS, ADOCOES, DOACOES, OPERACIONAL).
+end note
+DoaSvc -> AdoRepo : contarPorStatusEPeriodo(periodo)
+activate AdoRepo
+AdoRepo -> DB : SELECT status, COUNT(*) FROM adocao WHERE ... GROUP BY status
+DB --> AdoRepo : agregados
+AdoRepo --> DoaSvc : Map<Status, Long>
+deactivate AdoRepo
+DoaSvc -> DoaRepo : somarPorPeriodo(periodo)
+activate DoaRepo
+DoaRepo -> DB : SELECT SUM(valor) FROM doacao WHERE data_doacao BETWEEN ? AND ?
+DB --> DoaRepo : total
+DoaRepo --> DoaSvc : BigDecimal
+deactivate DoaRepo
+note right of DoaSvc
+  (Demais consultas — AnimalRepository etc. —
+  conforme o tipo de relatório.)
+end note
+DoaSvc -> RelRepo : save(new Relatorio(tipo, periodo, dadosAgregados, coordenador))
+activate RelRepo
+RelRepo -> DB : INSERT INTO relatorio(...) VALUES(...)
+DB --> RelRepo : id
+RelRepo --> DoaSvc : Relatorio
+deactivate RelRepo
+DoaSvc -> DoaSvc : relatorio.exportarPdf() → urlPdf
+DoaSvc --> DoaCtrl : Relatorio
+deactivate DoaSvc
+DoaCtrl --> JWT : RelatorioResponseDTO\n{idRelatorio, urlPdf, dadosAgregados}
+deactivate DoaCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> C : exibir / baixar relatório
+
+@enduml

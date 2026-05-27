@@ -1,0 +1,125 @@
+@startuml 21-seq-gerenciar-voluntarios
+' PataAmiga — Sequência de Realização do UC-11 Gerenciar Voluntários (seção 3.4)
+' Visão caixa-branca: Coordenador ↔ SPA ↔ JwtFilter ↔ UsuarioController ↔ UsuarioService ↔ UsuarioRepository ↔ DB
+' Exercita a Abordagem C: perfil 1:1 (PK = FK usuario_id) criado/desativado sobre o Usuario existente.
+
+title Sequência de Realização — UC-11 Gerenciar Voluntários (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Coordenador" as C
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":UsuarioController" as UsrCtrl
+participant ":UsuarioService" as UsrSvc
+participant ":UsuarioRepository" as UsrRepo
+database "PostgreSQL" as DB
+
+== Listar voluntários ==
+
+C -> SPA : abrirGestaoVoluntarios()
+SPA -> JWT : GET /api/v1/usuarios?perfil=VOLUNTARIO
+activate JWT
+JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+JWT -> UsrCtrl : listarPorPerfil(VOLUNTARIO)
+activate UsrCtrl
+UsrCtrl -> UsrSvc : listarPorPerfil(VOLUNTARIO)
+activate UsrSvc
+UsrSvc -> UsrRepo : findByPerfilVoluntarioIsNotNull()
+activate UsrRepo
+UsrRepo -> DB : SELECT u.* FROM usuario u JOIN perfil_voluntario pv ON pv.usuario_id=u.id
+DB --> UsrRepo : rows
+UsrRepo --> UsrSvc : List<Usuario>
+deactivate UsrRepo
+UsrSvc --> UsrCtrl : List<Usuario>
+deactivate UsrSvc
+UsrCtrl --> JWT : List<UsuarioResponseDTO>
+deactivate UsrCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> C : lista de voluntários
+
+== Conceder perfil de voluntário ==
+
+C -> SPA : ativarVoluntario(idUsuario, dados)
+SPA -> JWT : POST /api/v1/usuarios/{id}/perfis/voluntario\n{disponibilidade, areaAtuacao}
+activate JWT
+JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+JWT -> UsrCtrl : adicionarPerfilVoluntario(id, PerfilVoluntarioRequestDTO)
+activate UsrCtrl
+UsrCtrl -> UsrSvc : adicionarPerfilVoluntario(id, dados)
+activate UsrSvc
+UsrSvc -> UsrRepo : findById(id)
+activate UsrRepo
+UsrRepo -> DB : SELECT * FROM usuario WHERE id=?
+DB --> UsrRepo : row
+UsrRepo --> UsrSvc : Usuario
+deactivate UsrRepo
+note right of UsrSvc
+  Abordagem C: cria PerfilVoluntario 1:1
+  (PK = FK usuario_id). usuario.adicionarPerfil(...);
+  cascade ALL persiste o perfil junto.
+end note
+UsrSvc -> UsrRepo : save(usuario)
+activate UsrRepo
+UsrRepo -> DB : INSERT INTO perfil_voluntario(usuario_id, ativo, ...) VALUES(...)
+DB --> UsrRepo : ok
+UsrRepo --> UsrSvc : Usuario
+deactivate UsrRepo
+UsrSvc --> UsrCtrl : Usuario
+deactivate UsrSvc
+UsrCtrl --> JWT : UsuarioResponseDTO\n{perfis: [..., VOLUNTARIO]}
+deactivate UsrCtrl
+JWT --> SPA : 201 Created + JSON
+deactivate JWT
+SPA --> C : voluntário ativado
+
+== Desativar voluntário (alternativa) ==
+
+alt Desligar voluntário
+  C -> SPA : desativarVoluntario(idUsuario)
+  SPA -> JWT : PATCH /api/v1/usuarios/{id}/perfis/voluntario/desativar
+  activate JWT
+  JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+  JWT -> UsrCtrl : desativarPerfilVoluntario(id)
+  activate UsrCtrl
+  UsrCtrl -> UsrSvc : desativarPerfilVoluntario(id)
+  activate UsrSvc
+  note right of UsrSvc
+    perfil.desativar(): ativo=false.
+    Mantém o histórico (não remove o perfil).
+  end note
+  UsrSvc -> UsrRepo : save(perfilVoluntario.ativo=false)
+  activate UsrRepo
+  UsrRepo -> DB : UPDATE perfil_voluntario SET ativo=false WHERE usuario_id=?
+  DB --> UsrRepo : ok
+  UsrRepo --> UsrSvc : ok
+  deactivate UsrRepo
+  UsrSvc --> UsrCtrl : Usuario
+  deactivate UsrSvc
+  UsrCtrl --> JWT : 200 OK
+  deactivate UsrCtrl
+  JWT --> SPA : 200 OK
+  deactivate JWT
+  SPA --> C : voluntário desativado
+end
+
+@enduml

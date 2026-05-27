@@ -1,0 +1,170 @@
+@startuml 10-seq-sistema-panorama
+' PataAmiga — Sequência do Sistema: Panorama Ponta-a-Ponta (seção 3.4)
+' Visão integradora caixa-branca do ciclo de vida do animal (resgate → adoção → pós-adoção)
+' + fluxo paralelo de doações, reunindo os 5 atores e as camadas da arquitetura.
+' As camadas Controller/Service/Repository são genéricas; a nota de cada fase indica
+' os componentes concretos (ver C4 Nível 3, Fig 7). Cada fase refina-se em Figs 11–24.
+
+title Sequência do Sistema — Panorama Ponta-a-Ponta (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Voluntário" as VOL
+actor "Veterinário" as VET
+actor "Adotante" as ADO
+actor "Coordenador" as COORD
+actor "Doador" as DOA
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":Controller" as CTRL
+participant ":Service" as SVC
+participant ":Repository" as REPO
+database "PostgreSQL" as DB
+participant ":Serviço de E-mail" as MAIL #EDE7F6
+participant ":Gateway de Pagamento" as PAY #EDE7F6
+
+== 1. Resgate — UC-02 (Voluntário) ==
+note over CTRL, REPO : AnimalController · AnimalService · AnimalRepository
+VOL -> SPA : registrarAnimalResgatado(dados)
+SPA -> JWT : POST /api/v1/animais
+JWT -> CTRL : criar(AnimalRequestDTO)
+CTRL -> SVC : registrarResgate(dados)
+SVC -> REPO : save(new Animal(RESGATADO))
+REPO -> DB : INSERT INTO animal
+DB --> REPO : id
+REPO --> SVC : Animal
+SVC --> CTRL : Animal
+CTRL --> JWT : 201 {status=RESGATADO}
+JWT --> SPA : 201 Created
+SPA --> VOL : protocolo (RESGATADO)
+
+== 2. Atendimento veterinário — UC-03 «include» UC-07 (Veterinário) ==
+note over CTRL, REPO : RegistroVetController · RegistroVetService → AnimalService
+VET -> SPA : registrarAtendimento(idAnimal, dados)
+SPA -> JWT : POST /api/v1/registros-vet
+JWT -> CTRL : criar(AtendimentoRequestDTO)
+CTRL -> SVC : registrar(idAnimal, dados)
+SVC -> REPO : save(new RegistroVeterinario)
+REPO -> DB : INSERT INTO registro_veterinario
+SVC -> REPO : save(animal.status = EM_TRATAMENTO)
+REPO -> DB : UPDATE animal SET status='EM_TRATAMENTO'
+DB --> REPO : ok
+REPO --> SVC : Animal
+SVC --> CTRL : RegistroVeterinario
+CTRL --> JWT : 201 {statusAnimal=EM_TRATAMENTO}
+JWT --> SPA : 201 Created
+SPA --> VET : confirmação (EM_TRATAMENTO)
+
+== 3. Laudo de liberação — UC-09 «include» UC-07 (Veterinário) ==
+note over CTRL, REPO : RegistroVetController · RegistroVetService → AnimalService
+VET -> SPA : emitirLaudoLiberacao(idAnimal, parecer)
+SPA -> JWT : POST /api/v1/registros-vet/laudo
+JWT -> CTRL : emitirLaudo(LaudoRequestDTO)
+CTRL -> SVC : liberarParaAdocao(idAnimal)
+SVC -> REPO : save(animal.status = DISPONIVEL)
+REPO -> DB : UPDATE animal SET status='DISPONIVEL'
+DB --> REPO : ok
+REPO --> SVC : Animal
+SVC --> CTRL : RegistroVeterinario
+CTRL --> JWT : 201 {statusAnimal=DISPONIVEL}
+JWT --> SPA : 201 Created
+SPA --> VET : animal DISPONIVEL
+
+== 4. Busca e solicitação de adoção — UC-04 / UC-01 (Adotante) ==
+note over CTRL, REPO : AnimalController/AdocaoController · AdocaoService
+ADO -> SPA : buscar() + solicitarAdocao(idAnimal, formulario)
+SPA -> JWT : GET /api/v1/animais?status=DISPONIVEL\nPOST /api/v1/adocoes
+JWT -> CTRL : listar() + criar(AdocaoRequestDTO)
+CTRL -> SVC : buscarDisponiveis() + solicitar(idAnimal, formulario)
+SVC -> REPO : save(new Adocao(EM_ANALISE))
+REPO -> DB : INSERT INTO adocao
+DB --> REPO : id
+REPO --> SVC : Adocao
+SVC -> MAIL : notificarCoordenador(adocao)
+MAIL --> SVC : 202 Accepted
+SVC --> CTRL : Adocao
+CTRL --> JWT : 201 {status=EM_ANALISE}
+JWT --> SPA : 201 Created
+SPA --> ADO : protocolo (EM_ANALISE)
+
+== 5. Aprovação e conclusão — UC-10 «include» UC-07 (Coordenador) ==
+note over CTRL, REPO : AdocaoController · AdocaoService → AnimalService
+COORD -> SPA : aprovar(idAdocao) → concluir(idAdocao)
+SPA -> JWT : PATCH /api/v1/adocoes/{id}/aprovar\nPATCH /api/v1/adocoes/{id}/concluir
+JWT -> CTRL : aprovar(id) + concluir(id)
+CTRL -> SVC : aprovar(id) + concluir(id)
+SVC -> REPO : save(adocao: APROVADA → CONCLUIDA)
+REPO -> DB : UPDATE adocao SET status=...
+SVC -> REPO : save(animal: EM_PROCESSO_ADOCAO → ADOTADO)
+REPO -> DB : UPDATE animal SET status='ADOTADO'
+DB --> REPO : ok
+REPO --> SVC : Animal
+SVC -> MAIL : notificarAdotante("Adoção aprovada")
+MAIL --> SVC : 202 Accepted
+SVC --> CTRL : Adocao
+CTRL --> JWT : 200 {status=CONCLUIDA, animal=ADOTADO}
+JWT --> SPA : 200 OK
+SPA --> COORD : adoção concluída (ADOTADO)
+
+== 6. Acompanhamento pós-adoção — UC-06 (Adotante) ==
+note over CTRL, REPO : AdocaoController · AdocaoService
+ADO -> SPA : registrarPosAdocao(idAdocao, relato)
+SPA -> JWT : POST /api/v1/adocoes/{id}/pos-adocao
+JWT -> CTRL : registrarPosAdocao(id, dados)
+CTRL -> SVC : registrarPosAdocao(id, relato)
+SVC -> REPO : save(adocao.acompanhamentoPosAdocao)
+REPO -> DB : UPDATE adocao SET acompanhamento_pos_adocao=...
+DB --> REPO : ok
+REPO --> SVC : Adocao
+SVC --> CTRL : Adocao
+CTRL --> JWT : 200 OK
+JWT --> SPA : 200 OK
+SPA --> ADO : acompanhamento registrado
+
+== Fluxo paralelo: Doações — UC-13 (Doador) ==
+note over CTRL, REPO : DoacaoController · DoacaoService
+DOA -> SPA : realizarDoacao(valor, tipo, metodo)
+SPA -> JWT : POST /api/v1/doacoes
+JWT -> CTRL : criar(DoacaoRequestDTO)
+CTRL -> SVC : registrar(idDoador, valor, tipo)
+SVC -> REPO : save(new Doacao(PENDENTE))
+REPO -> DB : INSERT INTO doacao
+SVC -> PAY : processarPagamento(valor, metodo)
+PAY --> SVC : {status=APROVADO}
+SVC -> REPO : save(doacao: CONFIRMADO)
+REPO -> DB : UPDATE doacao SET status_pagamento='CONFIRMADO'
+DB --> REPO : ok
+REPO --> SVC : Doacao
+SVC -> MAIL : enviarRecibo(doador)
+MAIL --> SVC : 202 Accepted
+SVC --> CTRL : Doacao
+CTRL --> JWT : 201 {status=CONFIRMADO}
+JWT --> SPA : 201 Created
+SPA --> DOA : doação confirmada + recibo
+
+note over VOL, PAY
+  Visão consolidada do sistema. Cada fase é refinada no diagrama de
+  sequência do respectivo caso de uso (Figs 11–24). Os componentes
+  concretos (Controller/Service/Repository) de cada fase estão
+  indicados nas notas — ver C4 Nível 3 (Fig 7).
+end note
+
+@enduml

@@ -1,0 +1,94 @@
+@startuml 24-seq-acompanhar-destinacao
+' PataAmiga — Sequência de Realização do UC-14 Acompanhar Destinação das Doações (seção 3.4)
+' Visão caixa-branca: Doador ↔ SPA ↔ JwtFilter ↔ DoacaoController ↔ DoacaoService ↔ DoacaoRepository ↔ DB
+
+title Sequência de Realização — UC-14 Acompanhar Destinação das Doações (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Doador" as D
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":DoacaoController" as DoaCtrl
+participant ":DoacaoService" as DoaSvc
+participant ":DoacaoRepository" as DoaRepo
+database "PostgreSQL" as DB
+
+== Consultar minhas doações e destinação ==
+
+D -> SPA : abrirMinhasDoacoes()
+SPA -> JWT : GET /api/v1/doacoes?doador=me
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> DoaCtrl : listarDoDoador()
+activate DoaCtrl
+DoaCtrl -> DoaSvc : listarPorDoador(idDoador)
+activate DoaSvc
+DoaSvc -> DoaRepo : findByDoadorIdOrderByDataDoacaoDesc(idDoador)
+activate DoaRepo
+DoaRepo -> DB : SELECT * FROM doacao WHERE doador_id=? ORDER BY data_doacao DESC
+DB --> DoaRepo : rows
+DoaRepo --> DoaSvc : List<Doacao>
+deactivate DoaRepo
+note right of DoaSvc
+  Agrega a destinação dos recursos
+  (tratamento, resgate, manutenção)
+  a partir do campo Doacao.destinacao.
+end note
+DoaSvc --> DoaCtrl : List<Doacao> + resumoDestinacao
+deactivate DoaSvc
+DoaCtrl --> JWT : List<DoacaoResponseDTO>\n{valor, data, destinacao, comprovante}
+deactivate DoaCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> D : exibir histórico + gráfico de destinação
+
+== Baixar comprovante (opcional) ==
+
+opt Baixar comprovante de uma doação
+  D -> SPA : baixarComprovante(idDoacao)
+  SPA -> JWT : GET /api/v1/doacoes/{id}/comprovante
+  activate JWT
+  JWT -> JWT : validarToken()
+  JWT -> DoaCtrl : obterComprovante(id)
+  activate DoaCtrl
+  DoaCtrl -> DoaSvc : obterComprovante(id, idDoador)
+  activate DoaSvc
+  DoaSvc -> DoaRepo : findById(id)
+  activate DoaRepo
+  DoaRepo -> DB : SELECT comprovante FROM doacao WHERE id=?
+  DB --> DoaRepo : row
+  DoaRepo --> DoaSvc : Doacao
+  deactivate DoaRepo
+  note right of DoaSvc
+    Valida que a doação pertence
+    ao doador autenticado.
+  end note
+  DoaSvc --> DoaCtrl : urlComprovante
+  deactivate DoaSvc
+  DoaCtrl --> JWT : 200 OK + {urlComprovante}
+  deactivate DoaCtrl
+  JWT --> SPA : urlComprovante
+  deactivate JWT
+  SPA --> D : abrir comprovante (PDF)
+end
+
+@enduml

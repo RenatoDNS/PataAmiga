@@ -1,0 +1,92 @@
+@startuml 14-seq-buscar-animal
+' PataAmiga — Sequência de Realização do UC-04 Buscar Animal Disponível (seção 3.4)
+' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ AnimalController ↔ AnimalService ↔ Repository ↔ DB
+
+title Sequência de Realização — UC-04 Buscar Animal Disponível (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Adotante" as A
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AnimalController" as AnimCtrl
+participant ":AnimalService" as AnimSvc
+participant ":AnimalRepository" as AnimRepo
+database "PostgreSQL" as DB
+
+== Aplicar filtros de busca ==
+
+A -> SPA : aplicarFiltros(especie, porte, sexo, idade)
+SPA -> JWT : GET /api/v1/animais?status=DISPONIVEL&especie=...&porte=...
+activate JWT
+note right of JWT
+  Rota pública (permitAll):
+  token não é obrigatório para a busca.
+end note
+JWT -> AnimCtrl : listar(filtros, pageable)
+activate AnimCtrl
+AnimCtrl -> AnimSvc : buscarDisponiveis(filtros, pageable)
+activate AnimSvc
+AnimSvc -> AnimRepo : findByStatusAndFiltros(DISPONIVEL, filtros, pageable)
+activate AnimRepo
+AnimRepo -> DB : SELECT * FROM animal WHERE status='DISPONIVEL' AND ... LIMIT ? OFFSET ?
+DB --> AnimRepo : rows
+AnimRepo --> AnimSvc : Page<Animal>
+deactivate AnimRepo
+AnimSvc --> AnimCtrl : Page<Animal>
+deactivate AnimSvc
+AnimCtrl --> JWT : Page<AnimalResponseDTO>
+deactivate AnimCtrl
+JWT --> SPA : 200 OK + JSON (paginado)
+deactivate JWT
+SPA --> A : exibirResultados(lista, paginação)
+
+== Ver detalhes do animal ==
+
+opt Selecionar um animal da lista
+  A -> SPA : abrirDetalhe(idAnimal)
+  SPA -> JWT : GET /api/v1/animais/{id}
+  activate JWT
+  JWT -> AnimCtrl : detalhar(id)
+  activate AnimCtrl
+  AnimCtrl -> AnimSvc : buscarPorId(id)
+  activate AnimSvc
+  AnimSvc -> AnimRepo : findById(id)
+  activate AnimRepo
+  AnimRepo -> DB : SELECT * FROM animal WHERE id=?
+  DB --> AnimRepo : row
+  AnimRepo --> AnimSvc : Animal
+  deactivate AnimRepo
+  AnimSvc --> AnimCtrl : Animal
+  deactivate AnimSvc
+  AnimCtrl --> JWT : AnimalResponseDTO
+  deactivate AnimCtrl
+  JWT --> SPA : 200 OK + JSON
+  deactivate JWT
+  SPA --> A : exibirFichaAnimal
+end
+
+note over A, DB
+  UC-04 alimenta o início do UC-01 (Solicitar Adoção, Fig 11):
+  apenas animais em DISPONIVEL aparecem na busca pública.
+end note
+
+@enduml

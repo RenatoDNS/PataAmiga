@@ -1,0 +1,86 @@
+@startuml 19-seq-emitir-laudo
+' PataAmiga — Sequência de Realização do UC-09 Emitir Laudo de Liberação para Adoção (seção 3.4)
+' Visão caixa-branca: Veterinário ↔ SPA ↔ JwtFilter ↔ RegistroVetController ↔ RegistroVetService (→ AnimalService) ↔ Repos ↔ DB
+' «include» UC-07: promove a transição EM_TRATAMENTO → DISPONIVEL.
+
+title Sequência de Realização — UC-09 Emitir Laudo de Liberação (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Veterinário" as V
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":RegistroVetController" as VetCtrl
+participant ":RegistroVetService" as VetSvc
+participant ":AnimalService" as AnimSvc
+participant ":AnimalRepository" as AnimRepo
+participant ":RegistroVetRepository" as VetRepo
+database "PostgreSQL" as DB
+
+== Emitir laudo de liberação para adoção ==
+
+V -> SPA : emitirLaudo(idAnimal, parecerClinico)
+SPA -> JWT : POST /api/v1/registros-vet/laudo\n{idAnimal, parecerClinico}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> VetCtrl : emitirLaudo(LaudoRequestDTO)
+activate VetCtrl
+VetCtrl -> VetSvc : liberarParaAdocao(idAnimal, parecerClinico)
+activate VetSvc
+VetSvc -> AnimRepo : findById(idAnimal)
+activate AnimRepo
+AnimRepo -> DB : SELECT * FROM animal WHERE id=?
+DB --> AnimRepo : row
+AnimRepo --> VetSvc : Animal
+deactivate AnimRepo
+note right of VetSvc
+  Valida que Animal.status == EM_TRATAMENTO.
+  Lança StatusInvalidoException caso contrário.
+end note
+VetSvc -> VetRepo : save(new RegistroVeterinario(LAUDO_LIBERACAO, liberaParaAdocao=true))
+activate VetRepo
+VetRepo -> DB : INSERT INTO registro_veterinario(...) VALUES(...)
+DB --> VetRepo : id, dataAtendimento
+VetRepo --> VetSvc : RegistroVeterinario
+deactivate VetRepo
+note right of VetSvc
+  «include» UC-07
+  Transição EM_TRATAMENTO → DISPONIVEL.
+end note
+VetSvc -> AnimSvc : atualizarStatus(idAnimal, DISPONIVEL)
+activate AnimSvc
+AnimSvc -> AnimRepo : save(animal.status = DISPONIVEL)
+activate AnimRepo
+AnimRepo -> DB : UPDATE animal SET status='DISPONIVEL' WHERE id=?
+DB --> AnimRepo : ok
+AnimRepo --> AnimSvc : Animal
+deactivate AnimRepo
+AnimSvc --> VetSvc : Animal atualizado
+deactivate AnimSvc
+VetSvc --> VetCtrl : RegistroVeterinario
+deactivate VetSvc
+VetCtrl --> JWT : LaudoResponseDTO\n{idLaudo, statusAnimal=DISPONIVEL}
+deactivate VetCtrl
+JWT --> SPA : 201 Created + JSON
+deactivate JWT
+SPA --> V : animal liberado (DISPONIVEL)
+
+@enduml

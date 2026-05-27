@@ -1,0 +1,78 @@
+@startuml 17-seq-atualizar-status
+' PataAmiga — Sequência de Realização do UC-07 Atualizar Status do Animal (seção 3.4)
+' Visão caixa-branca: Voluntário ↔ SPA ↔ JwtFilter ↔ AnimalController ↔ AnimalService ↔ Repository ↔ DB
+' UC-07 é o ponto único de transição de StatusAnimal, reutilizado por «include» em UC-03/09/10.
+
+title Sequência de Realização — UC-07 Atualizar Status do Animal (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Voluntário" as V
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AnimalController" as AnimCtrl
+participant ":AnimalService" as AnimSvc
+participant ":AnimalRepository" as AnimRepo
+database "PostgreSQL" as DB
+
+note over V, DB
+  UC-07 concentra toda transição de StatusAnimal. É reutilizado por
+  «include» em UC-03 (Fig 13), UC-09 (Fig 19) e UC-10 (Fig 20).
+  Abaixo, a invocação **direta** pelo Voluntário (ex.: registrar ÓBITO).
+end note
+
+== Atualizar status do animal ==
+
+V -> SPA : alterarStatus(idAnimal, novoStatus)
+SPA -> JWT : PATCH /api/v1/animais/{id}/status\n{novoStatus}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AnimCtrl : atualizarStatus(id, StatusUpdateRequestDTO)
+activate AnimCtrl
+AnimCtrl -> AnimSvc : atualizarStatus(id, novoStatus)
+activate AnimSvc
+AnimSvc -> AnimRepo : findById(id)
+activate AnimRepo
+AnimRepo -> DB : SELECT * FROM animal WHERE id=?
+DB --> AnimRepo : row
+AnimRepo --> AnimSvc : Animal
+deactivate AnimRepo
+note right of AnimSvc
+  Valida a transição na máquina de estados
+  (ver Fig 28). Lança TransicaoInvalidaException
+  se proibida (ex.: OBITO é terminal).
+end note
+AnimSvc -> AnimSvc : animal.atualizarStatus(novoStatus)
+AnimSvc -> AnimRepo : save(animal)
+activate AnimRepo
+AnimRepo -> DB : UPDATE animal SET status=? WHERE id=?
+DB --> AnimRepo : ok
+AnimRepo --> AnimSvc : Animal
+deactivate AnimRepo
+AnimSvc --> AnimCtrl : Animal
+deactivate AnimSvc
+AnimCtrl --> JWT : AnimalResponseDTO\n{id, status}
+deactivate AnimCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> V : status atualizado
+
+@enduml

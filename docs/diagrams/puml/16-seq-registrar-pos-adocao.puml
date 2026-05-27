@@ -1,0 +1,107 @@
+@startuml 16-seq-registrar-pos-adocao
+' PataAmiga — Sequência de Realização do UC-06 Registrar Pós-Adoção (seção 3.4)
+' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ AdocaoController ↔ AdocaoService (→ AnimalService) ↔ Repos ↔ DB
+' O fluxo de devolução exercita a transição ADOTADO → DISPONIVEL (ver Fig 28).
+
+title Sequência de Realização — UC-06 Registrar Pós-Adoção (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Adotante" as A
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AdocaoController" as AdoCtrl
+participant ":AdocaoService" as AdoSvc
+participant ":AnimalService" as AnimSvc
+participant ":AdocaoRepository" as AdoRepo
+participant ":AnimalRepository" as AnimRepo
+database "PostgreSQL" as DB
+
+== Registrar acompanhamento pós-adoção ==
+
+A -> SPA : preencherAcompanhamento(idAdocao, relato, fotos)
+SPA -> JWT : POST /api/v1/adocoes/{id}/pos-adocao\n{relato, fotos}
+activate JWT
+JWT -> JWT : validarToken()
+JWT -> AdoCtrl : registrarPosAdocao(id, PosAdocaoRequestDTO)
+activate AdoCtrl
+AdoCtrl -> AdoSvc : registrarPosAdocao(id, dados)
+activate AdoSvc
+AdoSvc -> AdoRepo : findById(id)
+activate AdoRepo
+AdoRepo -> DB : SELECT * FROM adocao WHERE id=?
+DB --> AdoRepo : row
+AdoRepo --> AdoSvc : Adocao
+deactivate AdoRepo
+note right of AdoSvc
+  Valida Adocao.status == CONCLUIDA
+  (animal ADOTADO). Anexa o relato em
+  acompanhamentoPosAdocao.
+end note
+AdoSvc -> AdoRepo : save(adocao.acompanhamentoPosAdocao += relato)
+activate AdoRepo
+AdoRepo -> DB : UPDATE adocao SET acompanhamento_pos_adocao=? WHERE id=?
+DB --> AdoRepo : ok
+AdoRepo --> AdoSvc : Adocao
+deactivate AdoRepo
+AdoSvc --> AdoCtrl : Adocao
+deactivate AdoSvc
+AdoCtrl --> JWT : 200 OK + {idAdocao, atualizadoEm}
+deactivate AdoCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> A : confirmação de acompanhamento
+
+== Devolução do animal (exceção) ==
+
+alt Adotante relata devolução
+  A -> SPA : solicitarDevolucao(idAdocao, motivo)
+  SPA -> JWT : POST /api/v1/adocoes/{id}/devolucao\n{motivo}
+  activate JWT
+  JWT -> JWT : validarToken()
+  JWT -> AdoCtrl : registrarDevolucao(id, motivo)
+  activate AdoCtrl
+  AdoCtrl -> AdoSvc : registrarDevolucao(id, motivo)
+  activate AdoSvc
+  note right of AdoSvc
+    Devolução por falha no acompanhamento:
+    aciona UC-07 para reverter o animal a DISPONIVEL.
+  end note
+  AdoSvc -> AnimSvc : atualizarStatus(idAnimal, DISPONIVEL)
+  activate AnimSvc
+  AnimSvc -> AnimRepo : save(animal.status = DISPONIVEL)
+  activate AnimRepo
+  AnimRepo -> DB : UPDATE animal SET status='DISPONIVEL' WHERE id=?
+  DB --> AnimRepo : ok
+  AnimRepo --> AnimSvc : Animal
+  deactivate AnimRepo
+  AnimSvc --> AdoSvc : Animal atualizado
+  deactivate AnimSvc
+  AdoSvc --> AdoCtrl : ok
+  deactivate AdoSvc
+  AdoCtrl --> JWT : 200 OK + {statusAnimal=DISPONIVEL}
+  deactivate AdoCtrl
+  JWT --> SPA : 200 OK
+  deactivate JWT
+  SPA --> A : animal retornou para DISPONIVEL
+end
+
+@enduml

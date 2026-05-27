@@ -1,4 +1,4 @@
-@startuml 12-seq-registrar-atendimento
+@startuml 13-seq-registrar-atendimento
 ' PataAmiga — Sequência de Realização do UC-03 Registrar Atendimento Veterinário (seção 3.4)
 ' Visão caixa-branca: Veterinário ↔ SPA ↔ JwtFilter ↔ Controllers ↔ Services ↔ Repositories ↔ DB
 ' Mensagens derivadas do SSD 04 (CO-03). Inclui UC-07 Atualizar Status do Animal.
@@ -118,48 +118,13 @@ JWT --> SPA : 201 Created + JSON
 deactivate JWT
 SPA --> V : confirmação
 
-== Emitir laudo de liberação (opcional) ==
+== Próximo passo: liberação para adoção ==
 
-alt Liberar animal para adoção
-  V -> SPA : emitirLaudo(idAnimal, idAtendimento, parecer)
-  SPA -> JWT : POST /api/v1/registros-vet/laudo
-  activate JWT
-  JWT -> JWT : validarToken()
-  JWT -> VetCtrl : emitirLaudo(LaudoRequestDTO)
-  activate VetCtrl
-  VetCtrl -> VetSvc : liberarParaAdocao(idAnimal, idAtendimento, parecer)
-  activate VetSvc
-
-  VetSvc -> VetRepo : save(new RegistroVet(LAUDO_LIBERACAO, liberaParaAdocao=true))
-  activate VetRepo
-  VetRepo -> DB : INSERT INTO registro_vet(...) VALUES(...)
-  DB --> VetRepo : id
-  VetRepo --> VetSvc : RegistroVeterinario
-  deactivate VetRepo
-
-  note right of VetSvc
-    «include» UC-07
-    Transição EM_TRATAMENTO → DISPONIVEL.
-  end note
-
-  VetSvc -> AnimSvc : atualizarStatus(idAnimal, DISPONIVEL)
-  activate AnimSvc
-  AnimSvc -> AnimRepo : save(animal.status = DISPONIVEL)
-  activate AnimRepo
-  AnimRepo -> DB : UPDATE animal SET status='DISPONIVEL' WHERE id=?
-  DB --> AnimRepo : ok
-  AnimRepo --> AnimSvc : Animal
-  deactivate AnimRepo
-  AnimSvc --> VetSvc : Animal atualizado
-  deactivate AnimSvc
-
-  VetSvc --> VetCtrl : RegistroVeterinario
-  deactivate VetSvc
-  VetCtrl --> JWT : LaudoResponseDTO\n{idLaudo, statusAnimal=DISPONIVEL}
-  deactivate VetCtrl
-  JWT --> SPA : 200 OK + JSON
-  deactivate JWT
-  SPA --> V : DISPONIVEL
-end
+note over V, DB
+  A emissão do **laudo de liberação para adoção** (que promove
+  a transição EM_TRATAMENTO → DISPONIVEL, «include» UC-07)
+  é o **UC-09 — Emitir Laudo de Liberação** (ver Figura 19).
+  Mantido em diagrama próprio para evitar duplicação.
+end note
 
 @enduml

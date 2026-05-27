@@ -1,0 +1,165 @@
+@startuml 20-seq-aprovar-rejeitar-adocao
+' PataAmiga — Sequência de Realização do UC-10 Aprovar/Rejeitar Adoção (seção 3.4)
+' Visão caixa-branca: Coordenador ↔ SPA ↔ JwtFilter ↔ AdocaoController ↔ AdocaoService (→ AnimalService) ↔ Repos ↔ DB
+' «include» UC-07: aprovar → EM_PROCESSO_ADOCAO; concluir → ADOTADO. Notifica o adotante por e-mail.
+
+title Sequência de Realização — UC-10 Aprovar/Rejeitar Adoção (Caixa-Branca)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Coordenador" as C
+participant ":SPA Angular" as SPA
+participant ":JwtFilter" as JWT
+participant ":AdocaoController" as AdoCtrl
+participant ":AdocaoService" as AdoSvc
+participant ":AnimalService" as AnimSvc
+participant ":AdocaoRepository" as AdoRepo
+participant ":AnimalRepository" as AnimRepo
+database "PostgreSQL" as DB
+participant ":Serviço de E-mail" as MAIL #EDE7F6
+
+== Aprovar adoção ==
+
+C -> SPA : aprovar(idAdocao)
+SPA -> JWT : PATCH /api/v1/adocoes/{id}/aprovar
+activate JWT
+JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+JWT -> AdoCtrl : aprovar(id)
+activate AdoCtrl
+AdoCtrl -> AdoSvc : aprovar(id, idCoordenador)
+activate AdoSvc
+AdoSvc -> AdoRepo : findById(id)
+activate AdoRepo
+AdoRepo -> DB : SELECT * FROM adocao WHERE id=?
+DB --> AdoRepo : row
+AdoRepo --> AdoSvc : Adocao
+deactivate AdoRepo
+note right of AdoSvc
+  adocao.aprovar(coordenador):
+  status=APROVADA, dataAprovacao=agora.
+end note
+AdoSvc -> AdoRepo : save(adocao)
+activate AdoRepo
+AdoRepo -> DB : UPDATE adocao SET status='APROVADA', data_aprovacao=? WHERE id=?
+DB --> AdoRepo : ok
+AdoRepo --> AdoSvc : Adocao
+deactivate AdoRepo
+note right of AdoSvc
+  «include» UC-07
+  Transição DISPONIVEL → EM_PROCESSO_ADOCAO.
+end note
+AdoSvc -> AnimSvc : atualizarStatus(idAnimal, EM_PROCESSO_ADOCAO)
+activate AnimSvc
+AnimSvc -> AnimRepo : save(animal.status = EM_PROCESSO_ADOCAO)
+activate AnimRepo
+AnimRepo -> DB : UPDATE animal SET status='EM_PROCESSO_ADOCAO' WHERE id=?
+DB --> AnimRepo : ok
+AnimRepo --> AnimSvc : Animal
+deactivate AnimRepo
+AnimSvc --> AdoSvc : Animal atualizado
+deactivate AnimSvc
+AdoSvc -> MAIL : notificarAdotante(adocao, "Adoção aprovada")
+activate MAIL
+MAIL --> AdoSvc : 202 Accepted
+deactivate MAIL
+AdoSvc --> AdoCtrl : Adocao
+deactivate AdoSvc
+AdoCtrl --> JWT : AdocaoResponseDTO\n{status=APROVADA, statusAnimal=EM_PROCESSO_ADOCAO}
+deactivate AdoCtrl
+JWT --> SPA : 200 OK + JSON
+deactivate JWT
+SPA --> C : adoção aprovada
+
+== Rejeitar adoção (alternativa) ==
+
+alt Coordenador rejeita a solicitação
+  C -> SPA : rejeitar(idAdocao, motivo)
+  SPA -> JWT : PATCH /api/v1/adocoes/{id}/rejeitar\n{motivo}
+  activate JWT
+  JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+  JWT -> AdoCtrl : rejeitar(id, motivo)
+  activate AdoCtrl
+  AdoCtrl -> AdoSvc : rejeitar(id, motivo)
+  activate AdoSvc
+  AdoSvc -> AdoRepo : save(adocao.status=REJEITADA, motivoRejeicao=motivo)
+  activate AdoRepo
+  AdoRepo -> DB : UPDATE adocao SET status='REJEITADA', motivo_rejeicao=? WHERE id=?
+  DB --> AdoRepo : ok
+  AdoRepo --> AdoSvc : Adocao
+  deactivate AdoRepo
+  note right of AdoSvc
+    Animal permanece DISPONIVEL
+    (sem transição de status).
+  end note
+  AdoSvc -> MAIL : notificarAdotante(adocao, "Adoção não aprovada")
+  activate MAIL
+  MAIL --> AdoSvc : 202 Accepted
+  deactivate MAIL
+  AdoSvc --> AdoCtrl : Adocao
+  deactivate AdoSvc
+  AdoCtrl --> JWT : AdocaoResponseDTO\n{status=REJEITADA}
+  deactivate AdoCtrl
+  JWT --> SPA : 200 OK + JSON
+  deactivate JWT
+  SPA --> C : adoção rejeitada
+end
+
+== Concluir adoção (contrato assinado) ==
+
+opt Após entrega e assinatura do contrato
+  C -> SPA : concluir(idAdocao)
+  SPA -> JWT : PATCH /api/v1/adocoes/{id}/concluir
+  activate JWT
+  JWT -> JWT : validarToken() [RBAC: COORDENADOR]
+  JWT -> AdoCtrl : concluir(id)
+  activate AdoCtrl
+  AdoCtrl -> AdoSvc : concluir(id)
+  activate AdoSvc
+  AdoSvc -> AdoRepo : save(adocao.status=CONCLUIDA, dataConclusao=agora)
+  activate AdoRepo
+  AdoRepo -> DB : UPDATE adocao SET status='CONCLUIDA', data_conclusao=? WHERE id=?
+  DB --> AdoRepo : ok
+  AdoRepo --> AdoSvc : Adocao
+  deactivate AdoRepo
+  note right of AdoSvc
+    «include» UC-07
+    Transição EM_PROCESSO_ADOCAO → ADOTADO.
+  end note
+  AdoSvc -> AnimSvc : atualizarStatus(idAnimal, ADOTADO)
+  activate AnimSvc
+  AnimSvc -> AnimRepo : save(animal.status = ADOTADO)
+  activate AnimRepo
+  AnimRepo -> DB : UPDATE animal SET status='ADOTADO' WHERE id=?
+  DB --> AnimRepo : ok
+  AnimRepo --> AnimSvc : Animal
+  deactivate AnimRepo
+  AnimSvc --> AdoSvc : Animal atualizado
+  deactivate AnimSvc
+  AdoSvc --> AdoCtrl : Adocao
+  deactivate AdoSvc
+  AdoCtrl --> JWT : AdocaoResponseDTO\n{status=CONCLUIDA, statusAnimal=ADOTADO}
+  deactivate AdoCtrl
+  JWT --> SPA : 200 OK + JSON
+  deactivate JWT
+  SPA --> C : adoção concluída
+end
+
+@enduml

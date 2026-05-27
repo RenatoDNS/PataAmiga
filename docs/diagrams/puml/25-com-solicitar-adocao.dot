@@ -1,6 +1,6 @@
 // PataAmiga — Diagrama de Comunicacao do UC-01 Solicitar Adocao (secao 3.5)
-// Mesma colaboracao da sequencia 10, vista como rede de objetos numerados.
-// Render: dot -Tpng 13-com-solicitar-adocao.dot -o 13-com-solicitar-adocao.png
+// Mesma colaboracao da sequencia 11, vista como rede de objetos numerados.
+// Render: dot -Tpng 25-com-solicitar-adocao.dot -o 25-com-solicitar-adocao.png
 
 digraph DiagramaComunicacao_UC01 {
     rankdir=TB;
