@@ -1,4 +1,4 @@
-@startuml 24-seq-acompanhar-destinacao
+﻿@startuml 21-seq-acompanhar-destinacao
 ' PataAmiga — Sequência de Realização do UC-14 Acompanhar Destinação das Doações (seção 3.4)
 ' Visão caixa-branca: Doador ↔ SPA ↔ JwtFilter ↔ DoacaoController ↔ DoacaoService ↔ DoacaoRepository ↔ DB
 

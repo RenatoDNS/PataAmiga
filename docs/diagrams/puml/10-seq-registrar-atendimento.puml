@@ -1,4 +1,4 @@
-@startuml 13-seq-registrar-atendimento
+﻿@startuml 10-seq-registrar-atendimento
 ' PataAmiga — Sequência de Realização do UC-03 Registrar Atendimento Veterinário (seção 3.4)
 ' Visão caixa-branca: Veterinário ↔ SPA ↔ JwtFilter ↔ Controllers ↔ Services ↔ Repositories ↔ DB
 ' Mensagens derivadas do SSD 04 (CO-03). Inclui UC-07 Atualizar Status do Animal.

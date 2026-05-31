@@ -1,4 +1,4 @@
-@startuml 17-seq-atualizar-status
+﻿@startuml 14-seq-atualizar-status
 ' PataAmiga — Sequência de Realização do UC-07 Atualizar Status do Animal (seção 3.4)
 ' Visão caixa-branca: Voluntário ↔ SPA ↔ JwtFilter ↔ AnimalController ↔ AnimalService ↔ Repository ↔ DB
 ' UC-07 é o ponto único de transição de StatusAnimal, reutilizado por «include» em UC-03/09/10.

@@ -1,4 +1,4 @@
-@startuml 12-seq-registrar-animal
+﻿@startuml 09-seq-registrar-animal
 ' PataAmiga — Sequência de Realização do UC-02 Registrar Animal Resgatado (seção 3.4)
 ' Visão caixa-branca: Voluntário ↔ SPA ↔ JwtFilter ↔ AnimalController ↔ AnimalService ↔ Repositories ↔ DB
 ' Mensagens derivadas do SSD 03 (CO-02).

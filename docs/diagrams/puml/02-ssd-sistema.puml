@@ -1,0 +1,114 @@
+@startuml 02-ssd-sistema
+' PataAmiga — Diagrama de Sequência do Sistema (seção 2.3)
+' Visão caixa-preta, ponta a ponta: os 5 atores interagem com :Sistema por meio
+' das operações de sistema, cobrindo o ciclo de vida do animal (resgate → adoção
+' → pós-adoção) e o fluxo paralelo de doações. A realização interna (caixa-branca)
+' de cada operação está nos diagramas de sequência da seção 3.4 (Figuras 8–21).
+
+title Diagrama de Sequência do Sistema — PataAmiga (Caixa-Preta)
+
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.5
+skinparam backgroundColor white
+skinparam participant {
+  BackgroundColor #FFF8E1
+  BorderColor #B7791F
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam note {
+  BackgroundColor #F3F4F6
+  BorderColor #9E9E9E
+}
+
+actor "Voluntário" as VOL
+actor "Veterinário" as VET
+actor "Adotante" as ADO
+actor "Coordenador" as COORD
+actor "Doador" as DOA
+participant ":Sistema" as S
+
+== 1. Resgate — UC-02 (Voluntário) ==
+VOL -> S : registrarAnimalResgatado(dados)
+activate S
+note right of S
+  Cria Animal com status RESGATADO.
+end note
+S --> VOL : {protocolo, status = RESGATADO}
+deactivate S
+
+== 2. Atendimento veterinário — UC-03 «include» UC-07 (Veterinário) ==
+VET -> S : registrarAtendimento(idAnimal, dados)
+activate S
+note right of S
+  Cria RegistroVeterinario.
+  Transição RESGATADO → EM_TRATAMENTO.
+end note
+S --> VET : {statusAnimal = EM_TRATAMENTO}
+deactivate S
+
+== 3. Laudo de liberação — UC-09 «include» UC-07 (Veterinário) ==
+VET -> S : emitirLaudoLiberacao(idAnimal, parecer)
+activate S
+note right of S
+  Transição EM_TRATAMENTO → DISPONIVEL.
+end note
+S --> VET : {statusAnimal = DISPONIVEL}
+deactivate S
+
+== 4. Busca e solicitação de adoção — UC-04 / UC-01 (Adotante) ==
+ADO -> S : buscarAnimaisDisponiveis(especie, porte, sexo)
+activate S
+S --> ADO : listaAnimais
+deactivate S
+ADO -> S : submeterSolicitacaoAdocao(idAnimal, formularioInteresse)
+activate S
+note right of S
+  Cria Adocao com status EM_ANALISE.
+  Notifica o Coordenador.
+end note
+S --> ADO : {protocolo, status = EM_ANALISE}
+deactivate S
+
+== 5. Aprovação e conclusão — UC-10 «include» UC-07 (Coordenador) ==
+COORD -> S : aprovarAdocao(idAdocao)
+activate S
+note right of S
+  Transição DISPONIVEL → EM_PROCESSO_ADOCAO.
+  Notifica o Adotante.
+end note
+S --> COORD : {status = APROVADA}
+deactivate S
+COORD -> S : concluirAdocao(idAdocao)
+activate S
+note right of S
+  Transição EM_PROCESSO_ADOCAO → ADOTADO.
+end note
+S --> COORD : {status = CONCLUIDA, animal = ADOTADO}
+deactivate S
+
+== 6. Acompanhamento pós-adoção — UC-06 (Adotante) ==
+ADO -> S : registrarPosAdocao(idAdocao, relato)
+activate S
+S --> ADO : acompanhamento registrado
+deactivate S
+
+== Fluxo paralelo: Doações — UC-13 (Doador) ==
+DOA -> S : realizarDoacao(valor, tipo, metodo)
+activate S
+note right of S
+  Processa pagamento (Gateway) e
+  confirma a Doacao. Envia recibo.
+end note
+S --> DOA : {status = CONFIRMADO, recibo}
+deactivate S
+
+note over VOL, S
+  Visão caixa-preta consolidada do sistema: cada operação de sistema é
+  realizada internamente (caixa-branca) no diagrama de sequência do
+  respectivo caso de uso — seção 3.4, Figuras 8–21.
+end note
+
+@enduml

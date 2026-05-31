@@ -1,4 +1,4 @@
-@startuml 22-seq-emitir-relatorios
+﻿@startuml 19-seq-emitir-relatorios
 ' PataAmiga — Sequência de Realização do UC-12 Emitir Relatórios Gerenciais (seção 3.4)
 ' Visão caixa-branca: Coordenador ↔ SPA ↔ JwtFilter ↔ DoacaoController ↔ DoacaoService ↔ (vários Repositories) ↔ DB
 ' Conforme o C4 (Fig 7), a geração de relatórios reside no componente de Doações/Relatórios.

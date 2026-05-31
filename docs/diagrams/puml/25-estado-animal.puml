@@ -1,4 +1,4 @@
-@startuml 28-estado-animal
+﻿@startuml 25-estado-animal
 ' PataAmiga — Diagrama de Estados: Ciclo de Vida do Animal (seção 3.6)
 ' Estados refletem o enum StatusAnimal da classe Animal (ver 09-classes.puml).
 ' Transições são acionadas pelos casos de uso UC-02, UC-03, UC-07, UC-09 e UC-10.

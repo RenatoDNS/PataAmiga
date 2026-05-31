@@ -1,4 +1,4 @@
-@startuml 14-seq-buscar-animal
+﻿@startuml 11-seq-buscar-animal
 ' PataAmiga — Sequência de Realização do UC-04 Buscar Animal Disponível (seção 3.4)
 ' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ AnimalController ↔ AnimalService ↔ Repository ↔ DB
 

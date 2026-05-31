@@ -1,4 +1,4 @@
-@startuml 20-seq-aprovar-rejeitar-adocao
+﻿@startuml 17-seq-aprovar-rejeitar-adocao
 ' PataAmiga — Sequência de Realização do UC-10 Aprovar/Rejeitar Adoção (seção 3.4)
 ' Visão caixa-branca: Coordenador ↔ SPA ↔ JwtFilter ↔ AdocaoController ↔ AdocaoService (→ AnimalService) ↔ Repos ↔ DB
 ' «include» UC-07: aprovar → EM_PROCESSO_ADOCAO; concluir → ADOTADO. Notifica o adotante por e-mail.
