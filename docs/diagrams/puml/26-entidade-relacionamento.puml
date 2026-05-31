@@ -1,4 +1,4 @@
-@startuml 29-entidade-relacionamento
+﻿@startuml 26-entidade-relacionamento
 ' PataAmiga — Diagrama Entidade-Relacionamento (seção 4)
 ' Esquema relacional do PostgreSQL espelhando o Diagrama de Classes (09-classes.puml).
 ' Aplica a "Abordagem C": tabela usuario base + 5 tabelas de perfil 1:1 opcionais (FK = PK).

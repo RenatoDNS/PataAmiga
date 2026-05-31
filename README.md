@@ -29,7 +29,7 @@ O <b>PataAmiga</b> é uma plataforma web desenvolvida para centralizar e otimiza
 - [2. Modelos de Usuário e Requisitos](#2-modelos-de-usuário-e-requisitos)
   - [2.1 Descrição de Atores](#21-descrição-de-atores)
   - [2.2 Modelo de Casos de Uso](#22-modelo-de-casos-de-uso)
-  - [2.3 Diagramas de Sequência do Sistema e Contratos de Operações](#23-diagramas-de-sequência-do-sistema-e-contratos-de-operações)
+  - [2.3 Diagrama de Sequência do Sistema](#23-diagrama-de-sequência-do-sistema)
 - [3. Modelos de Projeto](#3-modelos-de-projeto)
   - [3.1 Arquitetura (C4 Model)](#31-arquitetura-c4-model)
   - [3.2 Diagrama de Componentes e Implantação](#32-diagrama-de-componentes-e-implantação)
@@ -173,56 +173,26 @@ Fonte PlantUML: [`docs/diagrams/puml/01-caso-de-uso.puml`](docs/diagrams/puml/01
 
 ---
 
-### 2.3 Diagramas de Sequência do Sistema e Contratos de Operações
+### 2.3 Diagrama de Sequência do Sistema
 
-> Diagramas de Sequência do Sistema (SSD) — visão **caixa-preta** das três operações de sistema escolhidas. Cada SSD origina um **contrato de operação** com pré-condições e pós-condições.
+> Diagrama de Sequência do Sistema (SSD) — visão **caixa-preta**, ponta a ponta, do PataAmiga. Os **5 atores** interagem com o `:Sistema` por meio das **operações de sistema**, cobrindo o ciclo de vida do animal — resgate → tratamento → liberação → adoção → pós-adoção — mais o fluxo paralelo de doações. Por ser caixa-preta, o diagrama omite as camadas internas; a realização interna (**caixa-branca**) de cada operação está nos diagramas de sequência da seção [3.4](#34-diagramas-de-sequência) (Figuras 8–21).
 
-| UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
-| :---: | :---: | :---: |
-| ![SSD UC-01](docs/diagrams/png/02-ssd-solicitar-adocao.png) | ![SSD UC-02](docs/diagrams/png/03-ssd-registrar-animal.png) | ![SSD UC-03](docs/diagrams/png/04-ssd-registrar-atendimento.png) |
-| **Figura 2** — SSD UC-01 Solicitar Adoção | **Figura 3** — SSD UC-02 Registrar Animal | **Figura 4** — SSD UC-03 Registrar Atendimento |
+| Operação de Sistema | Ator | Caso de Uso |
+|---|---|---|
+| `registrarAnimalResgatado(dados)` | Voluntário | UC-02 |
+| `registrarAtendimento(idAnimal, dados)` | Veterinário | UC-03 «include» UC-07 |
+| `emitirLaudoLiberacao(idAnimal, parecer)` | Veterinário | UC-09 «include» UC-07 |
+| `buscarAnimaisDisponiveis(especie, porte, sexo)` | Adotante | UC-04 |
+| `submeterSolicitacaoAdocao(idAnimal, formularioInteresse)` | Adotante | UC-01 |
+| `aprovarAdocao(idAdocao)` / `concluirAdocao(idAdocao)` | Coordenador | UC-10 «include» UC-07 |
+| `registrarPosAdocao(idAdocao, relato)` | Adotante | UC-06 |
+| `realizarDoacao(valor, tipo, metodo)` | Doador | UC-13 |
 
-Fontes PlantUML:
-- [`docs/diagrams/puml/02-ssd-solicitar-adocao.puml`](docs/diagrams/puml/02-ssd-solicitar-adocao.puml)
-- [`docs/diagrams/puml/03-ssd-registrar-animal.puml`](docs/diagrams/puml/03-ssd-registrar-animal.puml)
-- [`docs/diagrams/puml/04-ssd-registrar-atendimento.puml`](docs/diagrams/puml/04-ssd-registrar-atendimento.puml)
+| ![Diagrama de Sequência do Sistema](docs/diagrams/png/02-ssd-sistema.png) |
+| :---: |
+| **Figura 2** — Diagrama de Sequência do Sistema do PataAmiga (Caixa-Preta, Ponta-a-Ponta) |
 
-#### Contratos de Operação
-
-> Um contrato por operação de sistema principal, derivado do respectivo SSD.
-
----
-
-**CO-01 — `submeterSolicitacaoAdocao`**
-
-| Campo | Descrição |
-|---|---|
-| **Operação** | `submeterSolicitacaoAdocao(idAnimal: Long, formularioInteresse: FormularioAdocaoDTO)` |
-| **Referências cruzadas** | UC-01 Solicitar Adoção |
-| **Pré-condições** | Animal com `id = idAnimal` existe e possui `status = DISPONIVEL`. Adotante autenticado no sistema. |
-| **Pós-condições** | Instância de `Adocao` criada com `status = EM_ANALISE` e associada ao `Animal` e ao `PerfilAdotante`. `Animal.status` mantido como `DISPONIVEL`. Notificação enviada ao Coordenador. |
-
----
-
-**CO-02 — `registrarAnimalResgatado`**
-
-| Campo | Descrição |
-|---|---|
-| **Operação** | `registrarAnimalResgatado(dados: AnimalRequestDTO)` |
-| **Referências cruzadas** | UC-02 Registrar Animal Resgatado |
-| **Pré-condições** | Voluntário autenticado. `dados.nome` e `dados.especie` não vazios. |
-| **Pós-condições** | Instância de `Animal` criada com `status = RESGATADO` e `id` gerado. `RegistroVeterinario` inicial (vazio) associado ao animal. |
-
----
-
-**CO-03 — `registrarAtendimento`**
-
-| Campo | Descrição |
-|---|---|
-| **Operação** | `registrarAtendimento(idAnimal: Long, dados: AtendimentoRequestDTO)` |
-| **Referências cruzadas** | UC-03 Registrar Atendimento Veterinário; UC-07 Atualizar Status do Animal (include) |
-| **Pré-condições** | Animal com `id = idAnimal` existe. Veterinário autenticado. `dados.descricao` não vazio. |
-| **Pós-condições** | Instância de `RegistroVeterinario` criada e associada ao `Animal`. `Animal.status` atualizado para `EM_TRATAMENTO` caso status anterior fosse `RESGATADO`. |
+Fonte PlantUML: [`docs/diagrams/puml/02-ssd-sistema.puml`](docs/diagrams/puml/02-ssd-sistema.puml)
 
 ---
 
@@ -252,19 +222,19 @@ security/            — JwtFilter, JwtUtil, UserDetailsServiceImpl
 
 #### C4 Nível 1 — Contexto
 
-| ![C4 Nível 1 — Contexto](docs/diagrams/png/05-c4-contexto.png) |
+| ![C4 Nível 1 — Contexto](docs/diagrams/png/03-c4-contexto.png) |
 | :---: |
-| **Figura 5** — C4 Nível 1: Diagrama de Contexto do PataAmiga |
+| **Figura 3** — C4 Nível 1: Diagrama de Contexto do PataAmiga |
 
-Fonte PlantUML: [`docs/diagrams/puml/05-c4-contexto.puml`](docs/diagrams/puml/05-c4-contexto.puml)
+Fonte PlantUML: [`docs/diagrams/puml/03-c4-contexto.puml`](docs/diagrams/puml/03-c4-contexto.puml)
 
 #### C4 Nível 2 — Containers
 
-| ![C4 Nível 2 — Containers](docs/diagrams/png/06-c4-containers.png) |
+| ![C4 Nível 2 — Containers](docs/diagrams/png/04-c4-containers.png) |
 | :---: |
-| **Figura 6** — C4 Nível 2: Diagrama de Containers do PataAmiga |
+| **Figura 4** — C4 Nível 2: Diagrama de Containers do PataAmiga |
 
-Fonte PlantUML: [`docs/diagrams/puml/06-c4-containers.puml`](docs/diagrams/puml/06-c4-containers.puml)
+Fonte PlantUML: [`docs/diagrams/puml/04-c4-containers.puml`](docs/diagrams/puml/04-c4-containers.puml)
 
 ---
 
@@ -274,11 +244,11 @@ Fonte PlantUML: [`docs/diagrams/puml/06-c4-containers.puml`](docs/diagrams/puml/
 
 #### Diagrama de Componentes (C4 Nível 3)
 
-| ![C4 Nível 3 — Componentes](docs/diagrams/png/07-c4-componentes.png) |
+| ![C4 Nível 3 — Componentes](docs/diagrams/png/05-c4-componentes.png) |
 | :---: |
-| **Figura 7** — C4 Nível 3: Componentes do Backend PataAmiga |
+| **Figura 5** — C4 Nível 3: Componentes do Backend PataAmiga |
 
-Fonte PlantUML: [`docs/diagrams/puml/07-c4-componentes.puml`](docs/diagrams/puml/07-c4-componentes.puml)
+Fonte PlantUML: [`docs/diagrams/puml/05-c4-componentes.puml`](docs/diagrams/puml/05-c4-componentes.puml)
 
 #### Diagrama de Implantação
 
@@ -297,11 +267,11 @@ A implantação é orquestrada por **Docker Compose** (arquivo `docker-compose.y
 
 **Ordem de inicialização:** `pataamiga-db` (com `healthcheck`) → `pataamiga-backend` (`depends_on: db`) → `pataamiga-frontend` (`depends_on: backend`).
 
-| ![Diagrama de Implantação](docs/diagrams/png/08-implantacao.png) |
+| ![Diagrama de Implantação](docs/diagrams/png/06-implantacao.png) |
 | :---: |
-| **Figura 8** — Diagrama de Implantação do PataAmiga (Docker Compose) |
+| **Figura 6** — Diagrama de Implantação do PataAmiga (Docker Compose) |
 
-Fonte PlantUML: [`docs/diagrams/puml/08-implantacao.puml`](docs/diagrams/puml/08-implantacao.puml)
+Fonte PlantUML: [`docs/diagrams/puml/06-implantacao.puml`](docs/diagrams/puml/06-implantacao.puml)
 
 ---
 
@@ -325,25 +295,17 @@ O modelo adota a **Abordagem C** para usuários: uma entidade `Usuario` central 
 | `Relatorio` | Entidade | Saída agregada gerada por um `PerfilCoordenador` |
 | `StatusAnimal`, `StatusAdocao`, `TipoDoacao`, `TipoRelatorio`, `TipoAtendimento`, `Especie`, `Sexo`, `Porte` | Enums | Estados e classificadores do domínio |
 
-| ![Diagrama de Classes](docs/diagrams/png/09-classes.png) |
+| ![Diagrama de Classes](docs/diagrams/png/07-classes.png) |
 | :---: |
-| **Figura 9** — Diagrama de Classes do Modelo de Domínio do PataAmiga |
+| **Figura 7** — Diagrama de Classes do Modelo de Domínio do PataAmiga |
 
-Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-classes.puml)
+Fonte PlantUML: [`docs/diagrams/puml/07-classes.puml`](docs/diagrams/puml/07-classes.puml)
 
 ---
 
 ### 3.4 Diagramas de Sequência
 
-> Realização interna (**caixa-branca**) do sistema. Esta seção traz **um diagrama de sequência para cada um dos 14 casos de uso** (Figuras 11–24) e **um Diagrama de Sequência do Sistema** em forma de panorama ponta-a-ponta (Figura 10). Cada diagrama atravessa as camadas da arquitetura — `SPA Angular` → `JwtFilter` → `Controller` → `Service` → `Repository` → `PostgreSQL` — refinando as operações de sistema dos SSDs (seção 2.3) em chamadas internas entre os componentes do C4 Nível 3 (Figura 7).
-
-#### Diagrama de Sequência do Sistema (Panorama)
-
-> Visão consolidada do sistema: o ciclo de vida do animal de ponta a ponta — resgate → tratamento → liberação → adoção → pós-adoção — mais o fluxo paralelo de doações, integrando os **5 atores** e as camadas. Cada fase numerada refina-se no diagrama de sequência do respectivo caso de uso (Figuras 11–24); por legibilidade, as camadas aparecem como lifelines genéricas (`Controller`/`Service`/`Repository`) e os componentes concretos de cada fase constam nas notas.
-
-| ![Sequência do Sistema — Panorama](docs/diagrams/png/10-seq-sistema-panorama.png) |
-| :---: |
-| **Figura 10** — Diagrama de Sequência do Sistema (Panorama Ponta-a-Ponta) |
+> Realização interna (**caixa-branca**) do sistema. Esta seção traz **um diagrama de sequência para cada um dos 14 casos de uso** (Figuras 8–21). Cada diagrama atravessa as camadas da arquitetura — `SPA Angular` → `JwtFilter` → `Controller` → `Service` → `Repository` → `PostgreSQL` — refinando as operações de sistema do Diagrama de Sequência do Sistema (seção [2.3](#23-diagrama-de-sequência-do-sistema), Figura 2) em chamadas internas entre os componentes do C4 Nível 3 (Figura 5).
 
 #### Componentes participantes por caso de uso
 
@@ -370,41 +332,40 @@ Fonte PlantUML: [`docs/diagrams/puml/09-classes.puml`](docs/diagrams/puml/09-cla
 
 | | | |
 | :---: | :---: | :---: |
-| ![UC-01](docs/diagrams/png/11-seq-solicitar-adocao.png) | ![UC-02](docs/diagrams/png/12-seq-registrar-animal.png) | ![UC-03](docs/diagrams/png/13-seq-registrar-atendimento.png) |
-| **Figura 11** — UC-01 Solicitar Adoção | **Figura 12** — UC-02 Registrar Animal Resgatado | **Figura 13** — UC-03 Registrar Atendimento Veterinário |
-| ![UC-04](docs/diagrams/png/14-seq-buscar-animal.png) | ![UC-05](docs/diagrams/png/15-seq-acompanhar-adocao.png) | ![UC-06](docs/diagrams/png/16-seq-registrar-pos-adocao.png) |
-| **Figura 14** — UC-04 Buscar Animal Disponível | **Figura 15** — UC-05 Acompanhar Processo de Adoção | **Figura 16** — UC-06 Registrar Pós-Adoção |
-| ![UC-07](docs/diagrams/png/17-seq-atualizar-status.png) | ![UC-08](docs/diagrams/png/18-seq-agendar-atendimento.png) | ![UC-09](docs/diagrams/png/19-seq-emitir-laudo.png) |
-| **Figura 17** — UC-07 Atualizar Status do Animal | **Figura 18** — UC-08 Agendar Atendimento Veterinário | **Figura 19** — UC-09 Emitir Laudo de Liberação |
-| ![UC-10](docs/diagrams/png/20-seq-aprovar-rejeitar-adocao.png) | ![UC-11](docs/diagrams/png/21-seq-gerenciar-voluntarios.png) | ![UC-12](docs/diagrams/png/22-seq-emitir-relatorios.png) |
-| **Figura 20** — UC-10 Aprovar/Rejeitar Adoção | **Figura 21** — UC-11 Gerenciar Voluntários | **Figura 22** — UC-12 Emitir Relatórios Gerenciais |
-| ![UC-13](docs/diagrams/png/23-seq-realizar-doacao.png) | ![UC-14](docs/diagrams/png/24-seq-acompanhar-destinacao.png) | |
-| **Figura 23** — UC-13 Realizar Doação | **Figura 24** — UC-14 Acompanhar Destinação das Doações | |
+| ![UC-01](docs/diagrams/png/08-seq-solicitar-adocao.png) | ![UC-02](docs/diagrams/png/09-seq-registrar-animal.png) | ![UC-03](docs/diagrams/png/10-seq-registrar-atendimento.png) |
+| **Figura 8** — UC-01 Solicitar Adoção | **Figura 9** — UC-02 Registrar Animal Resgatado | **Figura 10** — UC-03 Registrar Atendimento Veterinário |
+| ![UC-04](docs/diagrams/png/11-seq-buscar-animal.png) | ![UC-05](docs/diagrams/png/12-seq-acompanhar-adocao.png) | ![UC-06](docs/diagrams/png/13-seq-registrar-pos-adocao.png) |
+| **Figura 11** — UC-04 Buscar Animal Disponível | **Figura 12** — UC-05 Acompanhar Processo de Adoção | **Figura 13** — UC-06 Registrar Pós-Adoção |
+| ![UC-07](docs/diagrams/png/14-seq-atualizar-status.png) | ![UC-08](docs/diagrams/png/15-seq-agendar-atendimento.png) | ![UC-09](docs/diagrams/png/16-seq-emitir-laudo.png) |
+| **Figura 14** — UC-07 Atualizar Status do Animal | **Figura 15** — UC-08 Agendar Atendimento Veterinário | **Figura 16** — UC-09 Emitir Laudo de Liberação |
+| ![UC-10](docs/diagrams/png/17-seq-aprovar-rejeitar-adocao.png) | ![UC-11](docs/diagrams/png/18-seq-gerenciar-voluntarios.png) | ![UC-12](docs/diagrams/png/19-seq-emitir-relatorios.png) |
+| **Figura 17** — UC-10 Aprovar/Rejeitar Adoção | **Figura 18** — UC-11 Gerenciar Voluntários | **Figura 19** — UC-12 Emitir Relatórios Gerenciais |
+| ![UC-13](docs/diagrams/png/20-seq-realizar-doacao.png) | ![UC-14](docs/diagrams/png/21-seq-acompanhar-destinacao.png) | |
+| **Figura 20** — UC-13 Realizar Doação | **Figura 21** — UC-14 Acompanhar Destinação das Doações | |
 
 **Observações de modelagem:**
 - A autenticação é representada pelo passo `validarToken()` em `JwtFilter`, exigido em toda requisição autenticada (em UC-04, busca pública, o token é opcional — rota `permitAll`).
 - **UC-07 Atualizar Status do Animal** concentra toda transição de `StatusAnimal` e aparece como **«include»** em **UC-03** (`RESGATADO → EM_TRATAMENTO`), **UC-09** (`EM_TRATAMENTO → DISPONIVEL`) e **UC-10** (`DISPONIVEL → EM_PROCESSO_ADOCAO → ADOTADO`). Nesses casos o `Service` de origem delega a `AnimalService.atualizarStatus(...)`.
 - Validações de regra de negócio (ex.: `Animal.status == DISPONIVEL` antes de criar `Adocao`; laudo apenas com `status == EM_TRATAMENTO`) aparecem como auto-mensagens ou `note right of` no respectivo `Service`.
 - **UC-08** é materializado como um `RegistroVeterinario` programado (o modelo de domínio não possui entidade `Agendamento`), notificando o veterinário por e-mail.
-- **UC-12** e **UC-14** residem em `DoacaoController`/`DoacaoService`, conforme o C4 Nível 3 (Figura 7), que atribui a esse componente os "relatórios de impacto"; o `RelatorioRepository` integra o componente "Repositories".
-- O **panorama (Figura 10)** apresenta lifelines genéricas por legibilidade — os componentes concretos de cada fase estão nas notas, alinhados às Figuras 11–24.
+- **UC-12** e **UC-14** residem em `DoacaoController`/`DoacaoService`, conforme o C4 Nível 3 (Figura 5), que atribui a esse componente os "relatórios de impacto"; o `RelatorioRepository` integra o componente "Repositories".
+- O **Diagrama de Sequência do Sistema (Figura 2)** apresenta a visão caixa-preta ponta-a-ponta; cada operação de sistema é refinada (caixa-branca) no diagrama de sequência do respectivo caso de uso (Figuras 8–21).
 
 Fontes PlantUML:
-- [`docs/diagrams/puml/10-seq-sistema-panorama.puml`](docs/diagrams/puml/10-seq-sistema-panorama.puml)
-- [`docs/diagrams/puml/11-seq-solicitar-adocao.puml`](docs/diagrams/puml/11-seq-solicitar-adocao.puml)
-- [`docs/diagrams/puml/12-seq-registrar-animal.puml`](docs/diagrams/puml/12-seq-registrar-animal.puml)
-- [`docs/diagrams/puml/13-seq-registrar-atendimento.puml`](docs/diagrams/puml/13-seq-registrar-atendimento.puml)
-- [`docs/diagrams/puml/14-seq-buscar-animal.puml`](docs/diagrams/puml/14-seq-buscar-animal.puml)
-- [`docs/diagrams/puml/15-seq-acompanhar-adocao.puml`](docs/diagrams/puml/15-seq-acompanhar-adocao.puml)
-- [`docs/diagrams/puml/16-seq-registrar-pos-adocao.puml`](docs/diagrams/puml/16-seq-registrar-pos-adocao.puml)
-- [`docs/diagrams/puml/17-seq-atualizar-status.puml`](docs/diagrams/puml/17-seq-atualizar-status.puml)
-- [`docs/diagrams/puml/18-seq-agendar-atendimento.puml`](docs/diagrams/puml/18-seq-agendar-atendimento.puml)
-- [`docs/diagrams/puml/19-seq-emitir-laudo.puml`](docs/diagrams/puml/19-seq-emitir-laudo.puml)
-- [`docs/diagrams/puml/20-seq-aprovar-rejeitar-adocao.puml`](docs/diagrams/puml/20-seq-aprovar-rejeitar-adocao.puml)
-- [`docs/diagrams/puml/21-seq-gerenciar-voluntarios.puml`](docs/diagrams/puml/21-seq-gerenciar-voluntarios.puml)
-- [`docs/diagrams/puml/22-seq-emitir-relatorios.puml`](docs/diagrams/puml/22-seq-emitir-relatorios.puml)
-- [`docs/diagrams/puml/23-seq-realizar-doacao.puml`](docs/diagrams/puml/23-seq-realizar-doacao.puml)
-- [`docs/diagrams/puml/24-seq-acompanhar-destinacao.puml`](docs/diagrams/puml/24-seq-acompanhar-destinacao.puml)
+- [`docs/diagrams/puml/08-seq-solicitar-adocao.puml`](docs/diagrams/puml/08-seq-solicitar-adocao.puml)
+- [`docs/diagrams/puml/09-seq-registrar-animal.puml`](docs/diagrams/puml/09-seq-registrar-animal.puml)
+- [`docs/diagrams/puml/10-seq-registrar-atendimento.puml`](docs/diagrams/puml/10-seq-registrar-atendimento.puml)
+- [`docs/diagrams/puml/11-seq-buscar-animal.puml`](docs/diagrams/puml/11-seq-buscar-animal.puml)
+- [`docs/diagrams/puml/12-seq-acompanhar-adocao.puml`](docs/diagrams/puml/12-seq-acompanhar-adocao.puml)
+- [`docs/diagrams/puml/13-seq-registrar-pos-adocao.puml`](docs/diagrams/puml/13-seq-registrar-pos-adocao.puml)
+- [`docs/diagrams/puml/14-seq-atualizar-status.puml`](docs/diagrams/puml/14-seq-atualizar-status.puml)
+- [`docs/diagrams/puml/15-seq-agendar-atendimento.puml`](docs/diagrams/puml/15-seq-agendar-atendimento.puml)
+- [`docs/diagrams/puml/16-seq-emitir-laudo.puml`](docs/diagrams/puml/16-seq-emitir-laudo.puml)
+- [`docs/diagrams/puml/17-seq-aprovar-rejeitar-adocao.puml`](docs/diagrams/puml/17-seq-aprovar-rejeitar-adocao.puml)
+- [`docs/diagrams/puml/18-seq-gerenciar-voluntarios.puml`](docs/diagrams/puml/18-seq-gerenciar-voluntarios.puml)
+- [`docs/diagrams/puml/19-seq-emitir-relatorios.puml`](docs/diagrams/puml/19-seq-emitir-relatorios.puml)
+- [`docs/diagrams/puml/20-seq-realizar-doacao.puml`](docs/diagrams/puml/20-seq-realizar-doacao.puml)
+- [`docs/diagrams/puml/21-seq-acompanhar-destinacao.puml`](docs/diagrams/puml/21-seq-acompanhar-destinacao.puml)
 
 ---
 
@@ -420,15 +381,15 @@ Fontes PlantUML:
 
 | UC-01 Solicitar Adoção | UC-02 Registrar Animal | UC-03 Registrar Atendimento |
 | :---: | :---: | :---: |
-| ![Comunicação UC-01](docs/diagrams/png/25-com-solicitar-adocao.png) | ![Comunicação UC-02](docs/diagrams/png/26-com-registrar-animal.png) | ![Comunicação UC-03](docs/diagrams/png/27-com-registrar-atendimento.png) |
-| **Figura 25** — Comunicação UC-01 Solicitar Adoção | **Figura 26** — Comunicação UC-02 Registrar Animal | **Figura 27** — Comunicação UC-03 Registrar Atendimento |
+| ![Comunicação UC-01](docs/diagrams/png/22-com-solicitar-adocao.png) | ![Comunicação UC-02](docs/diagrams/png/23-com-registrar-animal.png) | ![Comunicação UC-03](docs/diagrams/png/24-com-registrar-atendimento.png) |
+| **Figura 22** — Comunicação UC-01 Solicitar Adoção | **Figura 23** — Comunicação UC-02 Registrar Animal | **Figura 24** — Comunicação UC-03 Registrar Atendimento |
 
-Cada par de objetos é conectado por uma **aresta sem direção** que carrega todas as mensagens trocadas entre eles — o sentido de cada mensagem é indicado pelos símbolos ↓ (direção da aresta declarada) e ↑ (sentido inverso), conforme o padrão UML. Os repositórios `AnimalRepository` e `RegistroVetRepository` aparecem lado a lado para refletir que ambos colaboram diretamente com o `PostgreSQL`. Para o UC-03, o diagrama modela apenas a operação principal (`registrarAtendimento`) incluindo a transição **«include» UC-07** (`VetSvc → AnimSvc → AnimRepo → DB`) — o fluxo de emissão de laudo é coberto em diagrama próprio, UC-09 (Figura 19).
+Cada par de objetos é conectado por uma **aresta sem direção** que carrega todas as mensagens trocadas entre eles — o sentido de cada mensagem é indicado pelos símbolos ↓ (direção da aresta declarada) e ↑ (sentido inverso), conforme o padrão UML. Os repositórios `AnimalRepository` e `RegistroVetRepository` aparecem lado a lado para refletir que ambos colaboram diretamente com o `PostgreSQL`. Para o UC-03, o diagrama modela apenas a operação principal (`registrarAtendimento`) incluindo a transição **«include» UC-07** (`VetSvc → AnimSvc → AnimRepo → DB`) — o fluxo de emissão de laudo é coberto em diagrama próprio, UC-09 (Figura 16).
 
 Fontes Graphviz (`.dot`):
-- [`docs/diagrams/puml/25-com-solicitar-adocao.dot`](docs/diagrams/puml/25-com-solicitar-adocao.dot)
-- [`docs/diagrams/puml/26-com-registrar-animal.dot`](docs/diagrams/puml/26-com-registrar-animal.dot)
-- [`docs/diagrams/puml/27-com-registrar-atendimento.dot`](docs/diagrams/puml/27-com-registrar-atendimento.dot)
+- [`docs/diagrams/puml/22-com-solicitar-adocao.dot`](docs/diagrams/puml/22-com-solicitar-adocao.dot)
+- [`docs/diagrams/puml/23-com-registrar-animal.dot`](docs/diagrams/puml/23-com-registrar-animal.dot)
+- [`docs/diagrams/puml/24-com-registrar-atendimento.dot`](docs/diagrams/puml/24-com-registrar-atendimento.dot)
 
 ---
 
@@ -460,11 +421,11 @@ Fontes Graphviz (`.dot`):
 | `ADOTADO` → `DISPONIVEL` | Devolução do animal (falha no acompanhamento pós-adoção) | UC-06 |
 | qualquer → `OBITO` | Óbito clínico do animal | UC-03 |
 
-| ![Diagrama de Estados do Animal](docs/diagrams/png/28-estado-animal.png) |
+| ![Diagrama de Estados do Animal](docs/diagrams/png/25-estado-animal.png) |
 | :---: |
-| **Figura 28** — Diagrama de Estados: Ciclo de Vida do Animal |
+| **Figura 25** — Diagrama de Estados: Ciclo de Vida do Animal |
 
-Fonte PlantUML: [`docs/diagrams/puml/28-estado-animal.puml`](docs/diagrams/puml/28-estado-animal.puml)
+Fonte PlantUML: [`docs/diagrams/puml/25-estado-animal.puml`](docs/diagrams/puml/25-estado-animal.puml)
 
 ---
 
@@ -492,11 +453,11 @@ Fonte PlantUML: [`docs/diagrams/puml/28-estado-animal.puml`](docs/diagrams/puml/
 
 > Nas cinco tabelas `perfil_*` a coluna `usuario_id` é **simultaneamente PK e FK** para `usuario(id)` — característica da Abordagem C que garante a cardinalidade 1:1 opcional sem coluna `tipo_perfil` discriminadora e sem herança no banco.
 
-| ![Diagrama Entidade-Relacionamento](docs/diagrams/png/29-entidade-relacionamento.png) |
+| ![Diagrama Entidade-Relacionamento](docs/diagrams/png/26-entidade-relacionamento.png) |
 | :---: |
-| **Figura 29** — Diagrama Entidade-Relacionamento do PataAmiga (PostgreSQL) |
+| **Figura 26** — Diagrama Entidade-Relacionamento do PataAmiga (PostgreSQL) |
 
-Fonte PlantUML: [`docs/diagrams/puml/29-entidade-relacionamento.puml`](docs/diagrams/puml/29-entidade-relacionamento.puml)
+Fonte PlantUML: [`docs/diagrams/puml/26-entidade-relacionamento.puml`](docs/diagrams/puml/26-entidade-relacionamento.puml)
 
 ### Estratégia de Mapeamento Objeto-Relacional
 
@@ -629,7 +590,7 @@ PataAmiga/
 │   └── workflows/              # CI/CD com GitHub Actions
 ├── docs/
 │   └── diagrams/
-│       ├── puml/               # Fontes dos diagramas (26 PlantUML + 3 Graphviz `.dot`)
+│       ├── puml/               # Fontes dos diagramas (23 PlantUML + 3 Graphviz `.dot`)
 │       └── png/                # Imagens geradas dos diagramas
 ├── backend/                    # API Spring Boot (Java 21)
 │   └── src/main/java/

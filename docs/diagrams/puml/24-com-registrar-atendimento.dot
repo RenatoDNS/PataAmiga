@@ -1,8 +1,8 @@
-// PataAmiga — Diagrama de Comunicacao do UC-03 Registrar Atendimento Veterinario (secao 3.5)
+﻿// PataAmiga — Diagrama de Comunicacao do UC-03 Registrar Atendimento Veterinario (secao 3.5)
 // Mesma colaboracao da sequencia 13, vista como rede de objetos numerados.
 // Cobre a operacao principal (registrarAtendimento) incluindo a transicao de status
 // «include» UC-07 disparada por VetSvc -> AnimSvc -> AnimRepo -> DB.
-// Render: dot -Tpng 27-com-registrar-atendimento.dot -o 27-com-registrar-atendimento.png
+// Render: dot -Tpng 24-com-registrar-atendimento.dot -o 24-com-registrar-atendimento.png
 
 digraph DiagramaComunicacao_UC03 {
     rankdir=TB;

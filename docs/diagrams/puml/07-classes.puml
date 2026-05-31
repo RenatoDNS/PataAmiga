@@ -1,4 +1,4 @@
-@startuml 09-classes
+﻿@startuml 07-classes
 ' PataAmiga — Diagrama de Classes (seção 3.3)
 ' Modelo de domínio com Abordagem C: Usuario base + 5 perfis 1:1 opcionais.
 

@@ -1,4 +1,4 @@
-@startuml 18-seq-agendar-atendimento
+﻿@startuml 15-seq-agendar-atendimento
 ' PataAmiga — Sequência de Realização do UC-08 Agendar Atendimento Veterinário (seção 3.4)
 ' Visão caixa-branca: Voluntário ↔ SPA ↔ JwtFilter ↔ RegistroVetController ↔ RegistroVetService ↔ Repos ↔ DB
 ' Notifica o veterinário via Serviço de E-mail (externo).

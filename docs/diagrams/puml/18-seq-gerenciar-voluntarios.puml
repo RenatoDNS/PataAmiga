@@ -1,4 +1,4 @@
-@startuml 21-seq-gerenciar-voluntarios
+﻿@startuml 18-seq-gerenciar-voluntarios
 ' PataAmiga — Sequência de Realização do UC-11 Gerenciar Voluntários (seção 3.4)
 ' Visão caixa-branca: Coordenador ↔ SPA ↔ JwtFilter ↔ UsuarioController ↔ UsuarioService ↔ UsuarioRepository ↔ DB
 ' Exercita a Abordagem C: perfil 1:1 (PK = FK usuario_id) criado/desativado sobre o Usuario existente.

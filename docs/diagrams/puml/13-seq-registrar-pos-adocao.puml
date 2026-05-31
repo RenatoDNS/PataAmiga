@@ -1,4 +1,4 @@
-@startuml 16-seq-registrar-pos-adocao
+﻿@startuml 13-seq-registrar-pos-adocao
 ' PataAmiga — Sequência de Realização do UC-06 Registrar Pós-Adoção (seção 3.4)
 ' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ AdocaoController ↔ AdocaoService (→ AnimalService) ↔ Repos ↔ DB
 ' O fluxo de devolução exercita a transição ADOTADO → DISPONIVEL (ver Fig 28).

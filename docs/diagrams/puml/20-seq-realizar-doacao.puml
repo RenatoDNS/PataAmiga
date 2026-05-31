@@ -1,4 +1,4 @@
-@startuml 23-seq-realizar-doacao
+﻿@startuml 20-seq-realizar-doacao
 ' PataAmiga — Sequência de Realização do UC-13 Realizar Doação (seção 3.4)
 ' Visão caixa-branca: Doador ↔ SPA ↔ JwtFilter ↔ DoacaoController ↔ DoacaoService ↔ DoacaoRepository ↔ DB
 ' Integra Gateway de Pagamento (processa o pagamento) e Serviço de E-mail (envia recibo) — ambos externos.

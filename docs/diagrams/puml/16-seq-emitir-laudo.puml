@@ -1,4 +1,4 @@
-@startuml 19-seq-emitir-laudo
+﻿@startuml 16-seq-emitir-laudo
 ' PataAmiga — Sequência de Realização do UC-09 Emitir Laudo de Liberação para Adoção (seção 3.4)
 ' Visão caixa-branca: Veterinário ↔ SPA ↔ JwtFilter ↔ RegistroVetController ↔ RegistroVetService (→ AnimalService) ↔ Repos ↔ DB
 ' «include» UC-07: promove a transição EM_TRATAMENTO → DISPONIVEL.

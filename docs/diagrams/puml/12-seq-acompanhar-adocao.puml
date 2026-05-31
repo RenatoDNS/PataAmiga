@@ -1,4 +1,4 @@
-@startuml 15-seq-acompanhar-adocao
+﻿@startuml 12-seq-acompanhar-adocao
 ' PataAmiga — Sequência de Realização do UC-05 Acompanhar Processo de Adoção (seção 3.4)
 ' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ AdocaoController ↔ AdocaoService ↔ Repository ↔ DB
 

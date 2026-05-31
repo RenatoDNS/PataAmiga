@@ -1,4 +1,4 @@
-@startuml 11-seq-solicitar-adocao
+﻿@startuml 08-seq-solicitar-adocao
 ' PataAmiga — Sequência de Realização do UC-01 Solicitar Adoção (seção 3.4)
 ' Visão caixa-branca: Adotante ↔ SPA ↔ JwtFilter ↔ Controllers ↔ Services ↔ Repositories ↔ DB
 ' Mensagens derivadas do SSD 02 (CO-01).

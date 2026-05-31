@@ -1,4 +1,4 @@
-@startuml 08-implantacao
+﻿@startuml 06-implantacao
 ' PataAmiga — Diagrama de Implantação (seção 3.2)
 
 title Diagrama de Implantação — PataAmiga (Docker Compose)
